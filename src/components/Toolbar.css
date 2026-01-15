@@ -1,0 +1,158 @@
+.toolbar {
+  width: 200px;
+  background-color: #ecf0f1;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-self: flex-start;
+}
+
+.toolbar-section {
+  margin-bottom: 2rem;
+}
+
+.toolbar-section h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.toolbar-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border: 2px solid #bdc3c7;
+  background-color: #ffffff;
+  color: #2c3e50;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toolbar-button:hover {
+  background-color: #3498db;
+  border-color: #3498db;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-button.active {
+  background-color: #2980b9;
+  border-color: #2980b9;
+  color: white;
+}
+
+.toolbar-button.danger {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+.toolbar-button.danger:hover {
+  background-color: #e74c3c;
+  border-color: #e74c3c;
+  color: white;
+}
+
+.instructions {
+  list-style: none;
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  line-height: 1.6;
+}
+
+.instructions li {
+  margin-bottom: 0.5rem;
+}
+
+.instructions strong {
+  color: #2c3e50;
+}
+
+.unit-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.unit-button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #bdc3c7;
+  background-color: #ffffff;
+  color: #2c3e50;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.unit-button:hover {
+  background-color: #27ae60;
+  border-color: #27ae60;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.unit-button.active {
+  background-color: #229954;
+  border-color: #229954;
+  color: white;
+}
+
+.model-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+}
+
+.model-button:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #654a8f 100%);
+  border-color: #5568d3;
+}
+
+.upload-button {
+  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  color: white;
+  border-color: #e67e22;
+}
+
+.upload-button:hover {
+  background: linear-gradient(135deg, #d35400 0%, #ba4a00 100%);
+  border-color: #d35400;
+}
+
+.sketch-button {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border-color: #f093fb;
+}
+
+.sketch-button:hover {
+  background: linear-gradient(135deg, #e080ea 0%, #e4465a 100%);
+  border-color: #e080ea;
+}
+
+.save-sketch-button {
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+  border-color: #27ae60;
+}
+
+.save-sketch-button:hover {
+  background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+  border-color: #229954;
+}

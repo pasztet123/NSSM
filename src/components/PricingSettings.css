@@ -1,0 +1,342 @@
+.pricing-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.pricing-settings {
+  background-color: white;
+  border-radius: 12px;
+  max-width: 800px;
+  max-height: 85vh;
+  width: 90%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.settings-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.close-button {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.settings-content {
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 0.5rem;
+}
+
+/* Material Prices */
+.materials-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.material-price-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.material-price-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.material-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.material-color {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 2px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.material-name {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.material-dimensions {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.price-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #27ae60;
+}
+
+.edit-button {
+  padding: 0.5rem;
+  background-color: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.edit-button:hover {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.edit-button:hover svg {
+  stroke: white;
+}
+
+.price-edit {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.price-edit input {
+  width: 120px;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #667eea;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.save-button,
+.cancel-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.save-button {
+  background-color: #27ae60;
+  color: white;
+}
+
+.save-button:hover {
+  background-color: #229954;
+}
+
+.cancel-button {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #c0392b;
+}
+
+/* Labor Costs */
+.labor-costs-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.labor-cost-item {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+
+.labor-label {
+  display: block;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+.labor-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.currency {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.labor-input-group input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: border-color 0.2s;
+}
+
+.labor-input-group input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Profit Margin */
+.margin-control {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+}
+
+.margin-slider {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+  cursor: pointer;
+}
+
+.margin-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.margin-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: white;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.margin-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.margin-value input {
+  width: 60px;
+  padding: 0.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.9);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  color: #667eea;
+}
+
+.margin-value input:focus {
+  outline: none;
+  border-color: white;
+}
+
+.percent {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pricing-settings {
+    width: 95%;
+  }
+
+  .labor-costs-list {
+    grid-template-columns: 1fr;
+  }
+
+  .margin-control {
+    flex-direction: column;
+  }
+}
