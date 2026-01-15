@@ -32,16 +32,21 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
     const loadSTL = async () => {
       try {
         let arrayBuffer: ArrayBuffer;
+        const uploadedFile = model.uploadedFile!; // Safe after null check above
 
         // Check if it's a Supabase path or base64
-        if (model.uploadedFile.startsWith('data:')) {
+        if (uploadedFile.startsWith('data:')) {
           // Base64 data (local mode)
           console.log('Loading from base64...');
-          const base64Data = model.uploadedFile.includes(',') 
-            ? model.uploadedFile.split(',')[1] 
-            : model.uploadedFile;
+          const base64Data = uploadedFile.includes(',') 
+            ? uploadedFile.split(',')[1] 
+            : uploadedFile;
           
           console.log('Base64 data length:', base64Data.length);
+
+          if (!base64Data) {
+            throw new Error('No base64 data found');
+          }
 
           // Decode to ArrayBuffer
           const binaryString = atob(base64Data);
@@ -52,8 +57,8 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
           arrayBuffer = bytes.buffer;
         } else {
           // Supabase storage path
-          console.log('Downloading from Supabase:', model.uploadedFile);
-          const { data, error: downloadError } = await download3DModelFile(model.uploadedFile);
+          console.log('Downloading from Supabase:', uploadedFile);
+          const { data, error: downloadError } = await download3DModelFile(uploadedFile);
           
           if (downloadError || !data) {
             throw new Error(`Failed to download: ${downloadError?.message}`);

@@ -29,21 +29,26 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
         console.log('Loading uploaded model:', model.name, 'Type:', model.fileType);
         
         let fileData: ArrayBuffer;
+        const uploadedFile = model.uploadedFile!; // Safe after null check above
         
         // Check if it's base64 data or Supabase path
-        if (model.uploadedFile.startsWith('data:') || model.uploadedFile.length > 1000) {
+        if (uploadedFile.startsWith('data:') || uploadedFile.length > 1000) {
           // It's base64 encoded data (local upload)
           console.log('Loading from base64');
-          console.log('uploadedFile length:', model.uploadedFile.length);
-          console.log('uploadedFile prefix:', model.uploadedFile.substring(0, 50));
+          console.log('uploadedFile length:', uploadedFile.length);
+          console.log('uploadedFile prefix:', uploadedFile.substring(0, 50));
           
           // Extract base64 data (remove data URL prefix if present)
-          const base64Data = model.uploadedFile.includes(',') 
-            ? model.uploadedFile.split(',')[1] 
-            : model.uploadedFile;
+          const base64Data = uploadedFile.includes(',') 
+            ? uploadedFile.split(',')[1] 
+            : uploadedFile;
           
           console.log('base64Data length:', base64Data.length);
           console.log('base64Data prefix:', base64Data.substring(0, 50));
+          
+          if (!base64Data) {
+            throw new Error('No base64 data found');
+          }
           
           // Decode base64 to binary
           const binaryString = atob(base64Data);
@@ -67,8 +72,8 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
           console.log('First 100 bytes (text):', textPreview);
         } else {
           // It's a Supabase storage path - need to download
-          console.log('Loading from Supabase path:', model.uploadedFile);
-          const response = await fetch(`/api/download-model?path=${encodeURIComponent(model.uploadedFile)}`);
+          console.log('Loading from Supabase path:', uploadedFile);
+          const response = await fetch(`/api/download-model?path=${encodeURIComponent(uploadedFile)}`);
           if (!response.ok) {
             throw new Error('Failed to download model from storage');
           }
@@ -97,10 +102,8 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
               // Create a temporary binary STL from ASCII (safer)
               const geometry = new THREE.BufferGeometry();
               const vertices: number[] = [];
-              const normals: number[] = [];
               
               const vertexPattern = /vertex\s+([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s+([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s+([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/g;
-              const normalPattern = /facet\s+normal\s+([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s+([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s+([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/g;
               
               let match;
               while ((match = vertexPattern.exec(text)) !== null) {

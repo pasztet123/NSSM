@@ -57,7 +57,7 @@ const SimpleModelUploader = ({ onModelUploaded, onClose }: SimpleModelUploaderPr
         const newModel: Model3D = {
           id: `temp-${Date.now()}`,
           name: modelName,
-          description: `Uploaded ${fileExt.toUpperCase()} model`,
+          description: `Uploaded ${fileExt?.toUpperCase() || 'MODEL'} model`,
           geometryType: 'uploaded',
           uploadedFile: path,
           fileType: fileExt as 'stl' | 'obj' | 'gltf' | 'glb',
@@ -106,7 +106,7 @@ const SimpleModelUploader = ({ onModelUploaded, onClose }: SimpleModelUploaderPr
         const newModel: Model3D = {
           id: `uploaded-${Date.now()}`,
           name: modelName,
-          description: `Uploaded ${fileExt.toUpperCase()} model`,
+          description: `Uploaded ${fileExt?.toUpperCase() || 'MODEL'} model`,
           geometryType: 'uploaded',
           uploadedFile: dataUrl,
           fileType: fileExt as 'stl' | 'obj' | 'gltf' | 'glb',

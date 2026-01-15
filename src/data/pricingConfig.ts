@@ -1,4 +1,4 @@
-import { LaborCost, ProductType } from '../types';
+import { LaborCost } from '../types';
 
 export const laborCosts: LaborCost[] = [
   {

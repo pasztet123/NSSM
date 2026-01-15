@@ -426,14 +426,6 @@ const DimensionCanvas = ({
     }
   };
 
-  // Cancel current segment drawing
-  const handleEscape = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && tempSegmentStart) {
-      setTempSegmentStart(null);
-      onSelectPoint(null);
-    }
-  };
-
   // Handle arrow keys for panning
   const handleKeyDown = (e: KeyboardEvent) => {
     const panStep = 20; // pixels to move per key press

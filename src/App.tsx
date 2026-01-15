@@ -37,7 +37,14 @@ function App() {
   const [show3DViewer, setShow3DViewer] = useState(false);
   const [showUploader, setShowUploader] = useState(false);
   const [uploadedModels, setUploadedModels] = useState<Model3D[]>([]);
-  const [savedSketches, setSavedSketches] = useState<typeof sample2DSketches>([]);
+  const [savedSketches, setSavedSketches] = useState<Array<{
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    thumbnail: string;
+    sketch2D: { points: Point[]; segments: Segment[] };
+  }>>([]);
   const [user, setUser] = useState<User | null>(null);
   const [loadingModels, setLoadingModels] = useState(false);
   const [products, setProducts] = useState<Product[]>(sampleProducts);

@@ -344,7 +344,10 @@ export async function get2DSketches(): Promise<{
       thumbnail: '✏️',
       sketch2D: {
         points: record.points,
-        segments: record.segments,
+        segments: record.segments.map((seg: Segment) => ({
+          ...seg,
+          label: seg.label || ''
+        })),
       },
     }));
 
