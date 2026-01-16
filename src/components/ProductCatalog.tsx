@@ -97,12 +97,6 @@ const ProductCatalog = ({
                   <h3>{product.name}</h3>
                   <p className="product-category">{product.category}</p>
                   <p className="product-description">{product.description}</p>
-                  <div className="product-price">
-                    <span className="price-label">Starting at</span>
-                    <span className="price-value">
-                      ${product.basePrice.toFixed(2)} / ft
-                    </span>
-                  </div>
                 </div>
               </div>
             ))

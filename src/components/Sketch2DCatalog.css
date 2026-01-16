@@ -25,7 +25,7 @@
 }
 
 .catalog-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -125,7 +125,7 @@
   color: #2c3e50;
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #667eea;
+  border-bottom: 2px solid #B8943C;
 }
 
 .sketch-grid {
@@ -146,14 +146,14 @@
 }
 
 .sketch-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  border-color: #B8943C;
+  box-shadow: 0 4px 12px rgba(184, 148, 60, 0.2);
   transform: translateY(-2px);
 }
 
 .sketch-item-preview {
   height: 120px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,95 +168,106 @@
 }
 
 .sketch-item-info {
-  padding: 1rem;
+  padding: 1.25rem;
   flex: 1;
 }
 
 .sketch-item-info h4 {
   margin: 0 0 0.5rem 0;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #163C6B;
 }
 
 .sketch-item-info p {
   margin: 0 0 0.75rem 0;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: #6c757d;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .sketch-item-meta {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #95a5a6;
   font-weight: 500;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e9ecef;
 }
 
 .sketch-item-actions {
   display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
+  gap: 0;
+  align-items: stretch;
+  border-top: 2px solid #dee2e6;
 }
 
 .load-sketch-button {
   flex: 1;
-  padding: 0.75rem;
-  background-color: #667eea;
+  padding: 1rem;
+  background-color: #163C6B;
   color: white;
   border: none;
   border-radius: 0;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .load-sketch-button:hover {
-  background-color: #5568d3;
+  background-color: #1a4d7f;
 }
 
 .assign-product-select {
   flex: 1;
-  padding: 0.75rem;
-  background-color: #27ae60;
+  padding: 1rem;
+  background-color: #B8943C;
   color: white;
   border: none;
   border-radius: 0;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  transition: background-color 0.2s;
-  min-width: 150px;
+  transition: all 0.2s;
+  min-width: 180px;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"%3e%3cpath fill="white" d="M6 9L1 4h10z"/%3e%3c/svg%3e');
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .assign-product-select:hover {
-  background-color: #229954;
+  background-color: #c9a34f;
 }
 
 .assign-product-select option {
   background-color: white;
   color: #2c3e50;
-  padding: 0.5rem;
+  padding: 0.75rem;
+  font-weight: 500;
 }
 
 .delete-sketch-button {
-  padding: 0.75rem 1rem;
-  background-color: #e74c3c;
+  padding: 1rem 1.25rem;
+  background-color: #dc3545;
   color: white;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .delete-sketch-button:hover {
-  background-color: #c0392b;
+  background-color: #c82333;
 }
 
 .delete-sketch-button svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }

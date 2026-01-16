@@ -29,7 +29,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   color: white;
 }
 
@@ -84,7 +84,7 @@
 
 .edit-mode-button.active {
   background: rgba(255, 255, 255, 0.9);
-  color: #667eea;
+  color: #163C6B;
   border-color: white;
 }
 
@@ -125,14 +125,14 @@
 }
 
 .catalog-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  border-color: #B8943C;
+  box-shadow: 0 4px 12px rgba(184, 148, 60, 0.2);
   transform: translateY(-2px);
 }
 
 .catalog-item.selected {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  border-color: #163C6B;
+  box-shadow: 0 0 0 3px rgba(22, 60, 107, 0.2);
 }
 
 .catalog-item-preview {
@@ -140,7 +140,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   position: relative;
 }
 

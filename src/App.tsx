@@ -17,7 +17,7 @@ import { sample2DSketches } from './data/sample2DSketches';
 import { sampleProducts } from './data/sampleProducts';
 import { materials } from './data/materials';
 import { defaultPricingConfig, PricingConfig } from './data/pricingConfig';
-import { get3DModels, save2DSketch, get2DSketches } from './lib/storage';
+import { get3DModels, save2DSketch, get2DSketches, saveProductsToLocalStorage, loadProductsFromLocalStorage } from './lib/storage';
 import { User } from '@supabase/supabase-js';
 import MaterialSelector from './components/MaterialSelector';
 import PriceDisplay from './components/PriceDisplay';
@@ -47,10 +47,16 @@ function App() {
   }>>([]);
   const [user, setUser] = useState<User | null>(null);
   const [loadingModels, setLoadingModels] = useState(false);
-  const [products, setProducts] = useState<Product[]>(sampleProducts);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(
-    sampleProducts.find(p => p.id === 'prod-4') || null
-  );
+  const [products, setProducts] = useState<Product[]>(() => {
+    // Try to load products from localStorage on initial render
+    const savedProducts = loadProductsFromLocalStorage();
+    return savedProducts || sampleProducts;
+  });
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(() => {
+    const savedProducts = loadProductsFromLocalStorage();
+    const productsToUse = savedProducts || sampleProducts;
+    return productsToUse.find(p => p.id === 'prod-4') || null;
+  });
   const [availableMaterials, setAvailableMaterials] = useState<Material[]>(materials);
   const [pricingConfig, setPricingConfig] = useState<PricingConfig>(defaultPricingConfig);
   
@@ -337,6 +343,8 @@ function App() {
     const model = allModels.find(m => m.id === modelId);
     const productIndex = products.findIndex(p => p.id === productId);
     
+    console.log('Assigning model to product:', { modelId, productId, model, productIndex });
+    
     if (model && productIndex !== -1) {
       // Update the product with the assigned model
       const updatedProducts = [...products];
@@ -346,6 +354,10 @@ function App() {
       };
       
       setProducts(updatedProducts);
+      // Save to localStorage
+      saveProductsToLocalStorage(updatedProducts);
+      
+      console.log('Product updated and saved:', updatedProducts[productIndex]);
       
       // If this is the currently selected product, update the 3D viewer
       if (selectedProduct?.id === productId) {
@@ -354,6 +366,8 @@ function App() {
       }
       
       alert(`Model "${model.name}" assigned to product "${updatedProducts[productIndex].name}"`);
+    } else {
+      console.error('Could not find model or product:', { model, productIndex });
     }
   };
 
@@ -370,6 +384,8 @@ function App() {
       };
       
       setProducts(updatedProducts);
+      // Save to localStorage
+      saveProductsToLocalStorage(updatedProducts);
       
       // If this is the currently selected product, update the canvas
       if (selectedProduct?.id === productId) {
@@ -480,6 +496,20 @@ function App() {
 
   const allModels = [...sampleModels, ...uploadedModels];
   const allSketches = [...sample2DSketches, ...savedSketches];
+
+  // Function to reset products to defaults
+  const resetProducts = () => {
+    if (confirm('Reset all products to default values? This will clear all assigned models.')) {
+      setProducts(sampleProducts);
+      saveProductsToLocalStorage(sampleProducts);
+      alert('Products reset to defaults');
+    }
+  };
+
+  // Expose resetProducts to window for debugging
+  if (typeof window !== 'undefined') {
+    (window as any).resetProducts = resetProducts;
+  }
 
   return (
     <div className="app">

@@ -65,12 +65,12 @@
 
 .auth-input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: #B8943C;
 }
 
 .auth-button {
   padding: 12px;
-  background: #3498db;
+  background: #163C6B;
   color: white;
   border: none;
   border-radius: 6px;
@@ -81,7 +81,7 @@
 }
 
 .auth-button:hover:not(:disabled) {
-  background: #2980b9;
+  background: #1e4a7f;
 }
 
 .auth-button:disabled {
@@ -92,7 +92,7 @@
 .toggle-auth {
   padding: 8px;
   background: transparent;
-  color: #3498db;
+  color: #B8943C;
   border: none;
   cursor: pointer;
   font-size: 13px;

@@ -378,3 +378,30 @@ export async function delete2DSketch(id: string): Promise<{ error: Error | null 
     return { error: error as Error };
   }
 }
+
+/**
+ * Save products to localStorage
+ */
+export function saveProductsToLocalStorage(products: any[]): void {
+  try {
+    localStorage.setItem('products', JSON.stringify(products));
+  } catch (error) {
+    console.error('Error saving products to localStorage:', error);
+  }
+}
+
+/**
+ * Load products from localStorage
+ */
+export function loadProductsFromLocalStorage(): any[] | null {
+  try {
+    const stored = localStorage.getItem('products');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error loading products from localStorage:', error);
+    return null;
+  }
+}

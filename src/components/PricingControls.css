@@ -1,5 +1,5 @@
 .pricing-controls {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: #f8f9fa;
   border-radius: 8px;
   border: 2px solid #dee2e6;
   margin-bottom: 1rem;
@@ -7,7 +7,7 @@
 }
 
 .pricing-controls-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   padding: 0.75rem 1.5rem;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .control-label svg {
-  stroke: #667eea;
+  stroke: #B8943C;
   flex-shrink: 0;
 }
 
@@ -59,8 +59,8 @@
 }
 
 .control-input-wrapper:focus-within {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #B8943C;
+  box-shadow: 0 0 0 3px rgba(184, 148, 60, 0.1);
 }
 
 .input-prefix {
@@ -113,7 +113,7 @@
 
 /* Hover effects */
 .pricing-control-item:hover .control-input-wrapper {
-  border-color: #667eea;
+  border-color: #B8943C;
 }
 
 /* Responsive */
@@ -131,10 +131,10 @@
 /* Animation for value changes */
 @keyframes pulse-border {
   0%, 100% {
-    border-color: #667eea;
+    border-color: #B8943C;
   }
   50% {
-    border-color: #764ba2;
+    border-color: #163C6B;
   }
 }
 

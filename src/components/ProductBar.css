@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   background: white;
-  border-top: 3px solid #3498db;
+  border-top: 3px solid #163C6B;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   z-index: 900;
   transition: all 0.3s ease;
@@ -17,7 +17,7 @@
 .product-bar-toggle {
   width: 100%;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   color: white;
   border: none;
   cursor: pointer;
@@ -30,7 +30,7 @@
 }
 
 .product-bar-toggle:hover {
-  background: linear-gradient(135deg, #5568d3 0%, #63398d 100%);
+  background: #1e4a7f;
 }
 
 .product-bar-toggle svg {
@@ -90,15 +90,15 @@
 }
 
 .product-tile:hover {
-  border-color: #3498db;
+  border-color: #B8943C;
   transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 8px 20px rgba(184, 148, 60, 0.3);
 }
 
 .product-tile.active {
-  border-color: #27ae60;
-  background: #f0fdf4;
-  box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+  border-color: #163C6B;
+  background: #f0f4f8;
+  box-shadow: 0 8px 20px rgba(22, 60, 107, 0.3);
 }
 
 .product-tile-image {
@@ -139,7 +139,7 @@
 
 .product-tile-category {
   margin: 0 0 0.5rem 0;
-  color: #3498db;
+  color: #B8943C;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -151,6 +151,21 @@
   color: #27ae60;
   font-size: 1.1rem;
   font-weight: 700;
+}
+
+.product-has-model {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #3498db;
+  font-weight: 600;
+}
+
+.product-has-model svg {
+  width: 16px;
+  height: 16px;
 }
 
 .product-tile-selected {

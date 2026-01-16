@@ -30,6 +30,9 @@ const Canvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [draggingPointId, setDraggingPointId] = useState<string | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
+  const [backgroundOpacity, setBackgroundOpacity] = useState(0.5);
+  const [showBackgroundControls, setShowBackgroundControls] = useState(false);
 
   const POINT_RADIUS = 6;
   const gridSize = getGridSize(unit);
@@ -45,9 +48,16 @@ const Canvas = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Draw background image if available
+    if (backgroundImage) {
+      ctx.globalAlpha = backgroundOpacity;
+      ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1.0;
+    }
+
     // Draw grid
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#808080';
+    ctx.lineWidth = 1.5;
     
     for (let x = 0; x <= canvas.width; x += gridSize) {
       ctx.beginPath();
@@ -232,19 +242,90 @@ const Canvas = ({
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          setBackgroundImage(img);
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearBackgroundImage = () => {
+    setBackgroundImage(null);
+  };
+
   return (
     <div className="canvas-container">
-      <canvas
-        ref={canvasRef}
-        width={1200}
-        height={800}
-        className="canvas"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onClick={handleClick}
-        style={{ cursor: mode === 'addPoint' ? 'crosshair' : 'default' }}
-      />
+      <div className="canvas-wrapper">
+        <div className="canvas-toolbar">
+          <label className="upload-background-btn">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+              <polyline points="21 15 16 10 5 21" strokeWidth="2"/>
+            </svg>
+            {backgroundImage ? 'Change Background' : 'Add Background Image'}
+          </label>
+        </div>
+        {backgroundImage && (
+          <div className="background-image-controls">
+            <button 
+              className="bg-control-toggle"
+              onClick={() => setShowBackgroundControls(!showBackgroundControls)}
+              title="Background image controls"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                <polyline points="21 15 16 10 5 21" strokeWidth="2"/>
+              </svg>
+            </button>
+            {showBackgroundControls && (
+              <div className="bg-controls-panel">
+                <label className="bg-control-item">
+                  <span>Opacity:</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={backgroundOpacity}
+                    onChange={(e) => setBackgroundOpacity(parseFloat(e.target.value))}
+                  />
+                  <span>{Math.round(backgroundOpacity * 100)}%</span>
+                </label>
+                <button className="bg-remove-btn" onClick={clearBackgroundImage}>
+                  Remove Background
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        <canvas
+          ref={canvasRef}
+          width={1200}
+          height={800}
+          className="canvas"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onClick={handleClick}
+          style={{ cursor: mode === 'addPoint' ? 'crosshair' : 'default' }}
+        />
+      </div>
     </div>
   );
 };

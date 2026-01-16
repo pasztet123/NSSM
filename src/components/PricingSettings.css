@@ -25,7 +25,7 @@
 }
 
 .settings-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -75,7 +75,7 @@
   font-size: 1.2rem;
   font-weight: 600;
   color: #2c3e50;
-  border-bottom: 2px solid #667eea;
+  border-bottom: 2px solid #B8943C;
   padding-bottom: 0.5rem;
 }
 
@@ -98,8 +98,8 @@
 }
 
 .material-price-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: #B8943C;
+  box-shadow: 0 2px 8px rgba(184, 148, 60, 0.1);
 }
 
 .material-info {
@@ -136,7 +136,7 @@
 .price {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #27ae60;
+  color: #B8943C;
 }
 
 .edit-button {
@@ -260,7 +260,7 @@
   align-items: center;
   gap: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   border-radius: 8px;
   color: white;
 }

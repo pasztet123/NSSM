@@ -34,7 +34,7 @@
   color: #2c3e50;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #3498db;
+  border-bottom: 2px solid #B8943C;
 }
 
 .property-group {
@@ -75,7 +75,7 @@
 
 .property-input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: #B8943C;
 }
 
 .input-row {
@@ -101,13 +101,13 @@
 }
 
 .update-button {
-  background-color: #3498db;
+  background-color: #163C6B;
   color: white;
   margin-top: 0.5rem;
 }
 
 .update-button:hover:not(:disabled) {
-  background-color: #2980b9;
+  background-color: #1e4a7f;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -142,7 +142,7 @@
   color: #2c3e50;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #27ae60;
+  border-bottom: 2px solid #B8943C;
 }
 
 .stat-item {

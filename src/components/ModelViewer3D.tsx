@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Center } from '@react-three/drei';
 import { Model3D } from '../types';
 import * as THREE from 'three';
@@ -310,7 +310,7 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
     <Center>
       <mesh geometry={geometry} castShadow receiveShadow>
         <meshStandardMaterial 
-          color={model.color || '#e67e22'} 
+          color={model.color || '#5dade2'} 
           metalness={0.7} 
           roughness={0.3}
           side={THREE.DoubleSide}
@@ -332,7 +332,7 @@ const ModelGeometry = ({ model }: { model: Model3D }) => {
   }
 
   const renderGeometry = () => {
-    const color = model.color || '#3498db';
+    const color = model.color || '#5dade2';
 
     switch (model.geometryType) {
       case 'box':
@@ -409,7 +409,68 @@ const ModelGeometry = ({ model }: { model: Model3D }) => {
   return <>{renderGeometry()}</>;
 };
 
+// Camera controller component to handle view changes
+const CameraController = ({ 
+  controlsRef 
+}: { 
+  controlsRef: React.MutableRefObject<any> 
+}) => {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.camera = camera;
+    }
+  }, [camera, controlsRef]);
+
+  return null;
+};
+
 const ModelViewer3D = ({ model }: ModelViewer3DProps) => {
+  const controlsRef = useRef<any>(null);
+  const [animating, setAnimating] = useState(false);
+
+  const animateCamera = (targetPosition: [number, number, number], duration: number = 600) => {
+    if (!controlsRef.current) return;
+    
+    setAnimating(true);
+    const controls = controlsRef.current;
+    const camera = controls.object;
+    
+    const startPosition = camera.position.clone();
+    const endPosition = new THREE.Vector3(...targetPosition);
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function (ease-in-out)
+      const eased = progress < 0.5
+        ? 2 * progress * progress
+        : -1 + (4 - 2 * progress) * progress;
+      
+      camera.position.lerpVectors(startPosition, endPosition, eased);
+      controls.update();
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setAnimating(false);
+      }
+    };
+    
+    animate();
+  };
+
+  const setViewFront = () => animateCamera([0, 0, 20]);
+  const setViewBack = () => animateCamera([0, 0, -20]);
+  const setViewLeft = () => animateCamera([-20, 0, 0]);
+  const setViewRight = () => animateCamera([20, 0, 0]);
+  const setViewTop = () => animateCamera([0, 20, 0]);
+  const setViewBottom = () => animateCamera([0, -20, 0]);
+  const setViewPerspective = () => animateCamera([15, 15, 15]);
+
   if (!model) {
     return (
       <div className="model-viewer-3d">
@@ -427,7 +488,14 @@ const ModelViewer3D = ({ model }: ModelViewer3DProps) => {
       <div className="model-viewer-3d">
         <Canvas shadows gl={{ antialias: true }} dpr={[1, 2]}>
           <PerspectiveCamera makeDefault position={[15, 15, 15]} />
-          <OrbitControls enablePan enableZoom enableRotate />
+          <OrbitControls 
+            ref={controlsRef}
+            enablePan 
+            enableZoom 
+            enableRotate 
+            enabled={!animating}
+          />
+          <CameraController controlsRef={controlsRef} />
 
           {/* Lights */}
           <ambientLight intensity={0.5} />
@@ -455,6 +523,31 @@ const ModelViewer3D = ({ model }: ModelViewer3DProps) => {
         
         <div className="viewer-controls">
           <p>🖱️ Left click + drag to rotate | Scroll to zoom | Right click + drag to pan</p>
+        </div>
+
+        {/* View Buttons */}
+        <div className="view-buttons">
+          <button onClick={setViewFront} title="Front View" disabled={animating}>
+            Front
+          </button>
+          <button onClick={setViewBack} title="Back View" disabled={animating}>
+            Back
+          </button>
+          <button onClick={setViewLeft} title="Left View" disabled={animating}>
+            Left
+          </button>
+          <button onClick={setViewRight} title="Right View" disabled={animating}>
+            Right
+          </button>
+          <button onClick={setViewTop} title="Top View" disabled={animating}>
+            Top
+          </button>
+          <button onClick={setViewBottom} title="Bottom View" disabled={animating}>
+            Bottom
+          </button>
+          <button onClick={setViewPerspective} title="Perspective View" className="perspective-btn" disabled={animating}>
+            📐 Perspective
+          </button>
         </div>
       </div>
     );

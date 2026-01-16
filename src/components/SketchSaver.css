@@ -26,7 +26,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: #B8943C;
   color: white;
 }
 
@@ -76,7 +76,7 @@
 }
 
 .info-item svg {
-  stroke: #f093fb;
+  stroke: #B8943C;
 }
 
 .saver-form {
@@ -116,8 +116,8 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #f093fb;
-  box-shadow: 0 0 0 3px rgba(240, 147, 251, 0.1);
+  border-color: #B8943C;
+  box-shadow: 0 0 0 3px rgba(184, 148, 60, 0.1);
 }
 
 .form-group input:disabled,
@@ -165,13 +165,14 @@
 }
 
 .save-button {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: #B8943C;
   color: white;
 }
 
 .save-button:hover:not(:disabled) {
+  background: #c9a34f;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
+  box-shadow: 0 4px 12px rgba(184, 148, 60, 0.3);
 }
 
 .save-button:active:not(:disabled) {

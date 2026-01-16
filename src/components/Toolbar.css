@@ -41,16 +41,16 @@
 }
 
 .toolbar-button:hover {
-  background-color: #3498db;
-  border-color: #3498db;
+  background-color: #B8943C;
+  border-color: #B8943C;
   color: white;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .toolbar-button.active {
-  background-color: #2980b9;
-  border-color: #2980b9;
+  background-color: #163C6B;
+  border-color: #163C6B;
   color: white;
 }
 
@@ -100,59 +100,59 @@
 }
 
 .unit-button:hover {
-  background-color: #27ae60;
-  border-color: #27ae60;
+  background-color: #B8943C;
+  border-color: #B8943C;
   color: white;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .unit-button.active {
-  background-color: #229954;
-  border-color: #229954;
+  background-color: #163C6B;
+  border-color: #163C6B;
   color: white;
 }
 
 .model-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   color: white;
-  border-color: #667eea;
+  border-color: #163C6B;
 }
 
 .model-button:hover {
-  background: linear-gradient(135deg, #5568d3 0%, #654a8f 100%);
-  border-color: #5568d3;
+  background: #1e4a7f;
+  border-color: #1e4a7f;
 }
 
 .upload-button {
-  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  background: #B8943C;
   color: white;
-  border-color: #e67e22;
+  border-color: #B8943C;
 }
 
 .upload-button:hover {
-  background: linear-gradient(135deg, #d35400 0%, #ba4a00 100%);
-  border-color: #d35400;
+  background: #c9a34f;
+  border-color: #c9a34f;
 }
 
 .sketch-button {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: #163C6B;
   color: white;
-  border-color: #f093fb;
+  border-color: #163C6B;
 }
 
 .sketch-button:hover {
-  background: linear-gradient(135deg, #e080ea 0%, #e4465a 100%);
-  border-color: #e080ea;
+  background: #1e4a7f;
+  border-color: #1e4a7f;
 }
 
 .save-sketch-button {
-  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  background: #B8943C;
   color: white;
-  border-color: #27ae60;
+  border-color: #B8943C;
 }
 
 .save-sketch-button:hover {
-  background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
-  border-color: #229954;
+  background: #c9a34f;
+  border-color: #c9a34f;
 }

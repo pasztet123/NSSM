@@ -41,7 +41,7 @@
 
 .product-detail-category {
   margin: 0;
-  color: #3498db;
+  color: #B8943C;
   font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -102,7 +102,7 @@
 }
 
 .thumbnail-images img:hover {
-  border-color: #3498db;
+  border-color: #B8943C;
   transform: scale(1.05);
 }
 
@@ -113,7 +113,7 @@
 }
 
 .pricing-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #163C6B;
   border-radius: 8px;
   padding: 1.5rem;
   color: white;

@@ -76,7 +76,7 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: #B8943C;
 }
 
 .category-filters {
@@ -98,19 +98,19 @@
 }
 
 .category-button:hover {
-  border-color: #3498db;
-  color: #3498db;
+  border-color: #B8943C;
+  color: #B8943C;
 }
 
 .category-button.active {
-  background: #3498db;
-  border-color: #3498db;
+  background: #163C6B;
+  border-color: #163C6B;
   color: white;
 }
 
 .add-product-button {
   padding: 0.75rem 1.5rem;
-  background: #27ae60;
+  background: #B8943C;
   color: white;
   border: none;
   border-radius: 6px;
@@ -125,9 +125,9 @@
 }
 
 .add-product-button:hover {
-  background: #229954;
+  background: #c9a34f;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  box-shadow: 0 4px 12px rgba(184, 148, 60, 0.3);
 }
 
 .product-grid {
