@@ -75,7 +75,7 @@ export interface Material {
   color?: string;
 }
 
-export type ProductType = 'coping-cap' | 'z-closure' | 'd-style' | 't-style' | 'valley' | 'roof-to-wall' | 'other';
+export type ProductType = 'coping-cap' | 'z-closure' | 'd-style' | 't-style' | 'valley' | 'roof-to-wall' | 'gravel-stop' | 'j-channel' | 'other';
 
 export interface LaborCost {
   productType: ProductType;
