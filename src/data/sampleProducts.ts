@@ -23,7 +23,9 @@ export const sampleProducts: Product[] = [
       width: '12" - 24" standard',
       application: 'Parapet walls, roof edges',
     },
-    model3D: sampleModels[0], // Rectangular Sheet
+    model3D: undefined,
+    model3DId: 'e9895a09-3635-4e77-8bf2-ef7b60f10765', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'steel-24ga-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -50,7 +52,9 @@ export const sampleProducts: Product[] = [
       width: '2" - 4"',
       length: '10 ft standard',
     },
-    model3D: sampleModels[1], // L-Profile
+    model3D: undefined,
+    model3DId: '735ff491-a648-4fa1-a750-4eb4d39bb33e', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'aluminum-032-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -77,7 +81,9 @@ export const sampleProducts: Product[] = [
       width: '3" - 5"',
       length: '10 ft standard',
     },
-    model3D: sampleModels[2], // T-Profile
+    model3D: undefined,
+    model3DId: '4a0e04fb-82ef-43be-946d-389665fa7584', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'copper-16oz', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -103,7 +109,9 @@ export const sampleProducts: Product[] = [
       width: '2" - 4"',
       length: '10 ft standard',
     },
-    model3D: sampleModels[0], // Rectangular Sheet
+    model3D: undefined,
+    model3DId: '4d7df420-5b8d-4e9e-85c1-846906e65abd', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'steel-24ga-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -130,7 +138,9 @@ export const sampleProducts: Product[] = [
       profile: 'Open or Closed Valley',
       length: '10 ft standard',
     },
-    model3D: sampleModels[1], // L-Profile
+    model3D: sampleModels[0], // Valley model (fallback)
+    model3DId: '564e8cae-d431-419f-b435-19a76b384592', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'steel-24ga-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -157,7 +167,9 @@ export const sampleProducts: Product[] = [
       profile: 'Step or Continuous',
       length: '10 ft standard',
     },
-    model3D: sampleModels[2], // T-Profile
+    model3D: undefined,
+    model3DId: 'e5a5e3d3-4e76-4b53-a81d-e5d87fb2cdfb', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'aluminum-032-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -183,7 +195,9 @@ export const sampleProducts: Product[] = [
       profile: 'Custom to panel type',
       length: '10 ft standard',
     },
-    model3D: sampleModels[0], // Rectangular Sheet
+    model3D: undefined,
+    model3DId: '3f639583-96e2-4c08-9cd5-7124211704de', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'aluminum-032-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -210,7 +224,9 @@ export const sampleProducts: Product[] = [
       width: '4" - 8"',
       length: '10 ft standard',
     },
-    model3D: sampleModels[0], // Rectangular Sheet
+    model3D: undefined,
+    model3DId: '19db0e4d-e05c-4b87-8f8e-ed303814679c', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'steel-24ga-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -237,7 +253,9 @@ export const sampleProducts: Product[] = [
       width: '3/4" - 1"',
       length: '10 ft standard',
     },
-    model3D: sampleModels[0], // Rectangular Sheet
+    model3D: undefined,
+    model3DId: 'b1973377-4111-4496-9b61-4fb35cb50084', // Database model ID
+    model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
     selectedMaterial: 'aluminum-032-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

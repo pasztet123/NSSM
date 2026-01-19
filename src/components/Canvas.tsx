@@ -45,7 +45,7 @@ const Canvas = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
+    // Clear canvas with transparent background
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw background image if available
@@ -53,24 +53,6 @@ const Canvas = ({
       ctx.globalAlpha = backgroundOpacity;
       ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
       ctx.globalAlpha = 1.0;
-    }
-
-    // Draw grid
-    ctx.strokeStyle = '#808080';
-    ctx.lineWidth = 1.5;
-    
-    for (let x = 0; x <= canvas.width; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
-    }
-    
-    for (let y = 0; y <= canvas.height; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
     }
 
     // Draw segments

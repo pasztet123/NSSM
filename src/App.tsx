@@ -17,7 +17,7 @@ import { sample2DSketches } from './data/sample2DSketches';
 import { sampleProducts } from './data/sampleProducts';
 import { materials } from './data/materials';
 import { defaultPricingConfig, PricingConfig } from './data/pricingConfig';
-import { get3DModels, save2DSketch, get2DSketches, saveProductsToLocalStorage, loadProductsFromLocalStorage } from './lib/storage';
+import { get3DModels, get3DModel, save2DSketch, get2DSketches, saveProductsToLocalStorage, loadProductsFromLocalStorage } from './lib/storage';
 import { User } from '@supabase/supabase-js';
 import MaterialSelector from './components/MaterialSelector';
 import PriceDisplay from './components/PriceDisplay';
@@ -48,14 +48,12 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loadingModels, setLoadingModels] = useState(false);
   const [products, setProducts] = useState<Product[]>(() => {
-    // Try to load products from localStorage on initial render
-    const savedProducts = loadProductsFromLocalStorage();
-    return savedProducts || sampleProducts;
+    // Always use fresh sampleProducts to ensure model3DId updates are reflected
+    saveProductsToLocalStorage(sampleProducts);
+    return sampleProducts;
   });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(() => {
-    const savedProducts = loadProductsFromLocalStorage();
-    const productsToUse = savedProducts || sampleProducts;
-    return productsToUse.find(p => p.id === 'prod-4') || null;
+    return sampleProducts.find(p => p.id === 'prod-4') || null;
   });
   const [availableMaterials, setAvailableMaterials] = useState<Material[]>(materials);
   const [pricingConfig, setPricingConfig] = useState<PricingConfig>(defaultPricingConfig);
@@ -286,12 +284,45 @@ function App() {
     setShowModelCatalog(false);
   };
 
-  const handleProductSelection = (product: Product) => {
+  const handleProductSelection = async (product: Product) => {
     setSelectedProduct(product);
-    // If product has a 3D model, display it
-    if (product.model3D) {
+    
+    // If product has a model3DId, load from database
+    if (product.model3DId) {
+      try {
+        const { model, error } = await get3DModel(product.model3DId);
+        if (error) {
+          console.error('Error loading product model:', error);
+          // Fallback to model3D if available
+          if (product.model3D) {
+            setSelectedModel(product.model3D);
+          }
+        } else if (model) {
+          setSelectedModel(model);
+        }
+      } catch (error) {
+        console.error('Error loading product model:', error);
+        // Fallback to model3D if available
+        if (product.model3D) {
+          setSelectedModel(product.model3D);
+        }
+      }
+    } else if (product.model3D) {
+      // If product has a 3D model object, display it
       setSelectedModel(product.model3D);
     }
+  };
+
+  const handleProductUpdate = (updatedProduct: Product) => {
+    const productIndex = products.findIndex(p => p.id === updatedProduct.id);
+    if (productIndex === -1) return;
+
+    const updatedProducts = [...products];
+    updatedProducts[productIndex] = updatedProduct;
+
+    setProducts(updatedProducts);
+    setSelectedProduct(updatedProduct);
+    saveProductsToLocalStorage(updatedProducts);
   };
 
   const handleMaterialSelection = (materialId: string) => {
@@ -579,7 +610,7 @@ function App() {
                 Loading 3D viewer...
               </div>
             }>
-              <ModelViewer3D model={selectedModel} />
+              <ModelViewer3D model={selectedModel} product={selectedProduct || undefined} onProductUpdate={handleProductUpdate} />
             </Suspense>
           </div>
         </ErrorBoundary>

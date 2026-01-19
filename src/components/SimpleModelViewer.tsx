@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { Model3D } from '../types';
+import { Model3D, Product } from '../types';
 import * as THREE from 'three';
 import { STLLoader } from 'three-stdlib';
 import { download3DModelFile } from '../lib/storage';
@@ -9,9 +9,11 @@ import './ModelViewer3D.css';
 
 interface SimpleModelViewerProps {
   model: Model3D;
+  product?: Product;
+  onProductUpdate?: (product: Product) => void;
 }
 
-const UploadedModel = ({ model }: { model: Model3D }) => {
+const UploadedModel = ({ model, rotation }: { model: Model3D; rotation: [number, number, number] }) => {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -148,7 +150,7 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
   console.log('=== SUCCESS STATE ===');
   console.log('Rendering geometry with', geometry.attributes.position.count, 'vertices');
   return (
-    <mesh geometry={geometry} castShadow receiveShadow>
+    <mesh geometry={geometry} castShadow receiveShadow rotation={rotation}>
       <meshStandardMaterial 
         color={model.color || '#5dade2'} 
         metalness={0.7} 
@@ -176,12 +178,60 @@ const CameraController = ({
   return null;
 };
 
-const SimpleModelViewer = ({ model }: SimpleModelViewerProps) => {
+const SimpleModelViewer = ({ model, product, onProductUpdate }: SimpleModelViewerProps) => {
   const controlsRef = useRef<any>(null);
   const [animating, setAnimating] = useState(false);
+  const [rotation, setRotation] = useState<[number, number, number]>(
+    product?.model3DRotation || [0, 0, Math.PI / 2]
+  );
+  const [saving, setSaving] = useState(false);
+
+  // Update rotation when product changes
+  useEffect(() => {
+    if (product?.model3DRotation) {
+      setRotation(product.model3DRotation);
+    } else {
+      setRotation([0, 0, Math.PI / 2]);
+    }
+  }, [product?.id, product?.model3DRotation]);
 
   console.log('=== VIEWER RENDER ===');
   console.log('Model:', model);
+  console.log('Product:', product);
+
+  const handleRotationChange = (axis: 0 | 1 | 2, degrees: number) => {
+    const newRotation: [number, number, number] = [...rotation];
+    newRotation[axis] = (degrees * Math.PI) / 180;
+    setRotation(newRotation);
+  };
+
+  const saveRotation = async () => {
+    if (!product) {
+      alert('Cannot save: No product selected');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updatedProduct = { ...product, model3DRotation: rotation };
+      
+      if (onProductUpdate) {
+        onProductUpdate(updatedProduct);
+        alert('Rotation saved successfully!');
+      } else {
+        alert('Cannot save: No update handler provided');
+      }
+    } catch (err) {
+      console.error('Error saving rotation:', err);
+      alert('Failed to save rotation');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetRotation = () => {
+    setRotation([0, 0, Math.PI / 2]);
+  };
 
   const animateCamera = (targetPosition: [number, number, number], duration: number = 600) => {
     if (!controlsRef.current) return;
@@ -267,7 +317,7 @@ const SimpleModelViewer = ({ model }: SimpleModelViewerProps) => {
         />
         <pointLight position={[-10, -10, -5]} intensity={0.5} />
 
-        <UploadedModel model={model} />
+        <UploadedModel model={model} rotation={rotation} />
 
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} receiveShadow>
           <planeGeometry args={[50, 50]} />
@@ -279,6 +329,190 @@ const SimpleModelViewer = ({ model }: SimpleModelViewerProps) => {
       
       <div className="viewer-controls">
         <p>🖱️ Left click + drag to rotate | Scroll to zoom | Right click + drag to pan</p>
+      </div>
+
+      {/* Rotation Controls */}
+      <div className="rotation-controls" style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        background: '#163C6B',
+        padding: '0',
+        borderRadius: '8px',
+        color: 'white',
+        minWidth: '220px',
+        maxWidth: '220px',
+        zIndex: 10,
+        fontSize: '13px',
+        overflow: 'hidden',
+        border: '2px solid #dee2e6',
+      }}>
+        <div style={{
+          background: '#0d2847',
+          padding: '8px 12px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        }}>
+          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ color: '#B8943C' }}>🔄</span>
+            Model Rotation
+          </h3>
+        </div>
+
+        <div style={{ padding: '12px' }}>
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600' }}>X:</label>
+              <input
+                type="number"
+                min="0"
+                max="360"
+                value={Math.round((rotation[0] * 180) / Math.PI)}
+                onChange={(e) => handleRotationChange(0, parseFloat(e.target.value) || 0)}
+                style={{
+                  width: '60px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  background: 'white',
+                  border: '2px solid #dee2e6',
+                  borderRadius: '4px',
+                  color: '#2c3e50',
+                  fontWeight: '600',
+                  textAlign: 'right',
+                }}
+              />
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              value={(rotation[0] * 180) / Math.PI}
+              onChange={(e) => handleRotationChange(0, parseFloat(e.target.value))}
+              style={{ width: '100%', accentColor: '#B8943C' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600' }}>Y:</label>
+              <input
+                type="number"
+                min="0"
+                max="360"
+                value={Math.round((rotation[1] * 180) / Math.PI)}
+                onChange={(e) => handleRotationChange(1, parseFloat(e.target.value) || 0)}
+                style={{
+                  width: '60px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  background: 'white',
+                  border: '2px solid #dee2e6',
+                  borderRadius: '4px',
+                  color: '#2c3e50',
+                  fontWeight: '600',
+                  textAlign: 'right',
+                }}
+              />
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              value={(rotation[1] * 180) / Math.PI}
+              onChange={(e) => handleRotationChange(1, parseFloat(e.target.value))}
+              style={{ width: '100%', accentColor: '#B8943C' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600' }}>Z:</label>
+              <input
+                type="number"
+                min="0"
+                max="360"
+                value={Math.round((rotation[2] * 180) / Math.PI)}
+                onChange={(e) => handleRotationChange(2, parseFloat(e.target.value) || 0)}
+                style={{
+                  width: '60px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  background: 'white',
+                  border: '2px solid #dee2e6',
+                  borderRadius: '4px',
+                  color: '#2c3e50',
+                  fontWeight: '600',
+                  textAlign: 'right',
+                }}
+              />
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              value={(rotation[2] * 180) / Math.PI}
+              onChange={(e) => handleRotationChange(2, parseFloat(e.target.value))}
+              style={{ width: '100%', accentColor: '#B8943C' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={saveRotation}
+              disabled={saving}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                background: '#B8943C',
+                border: '2px solid #B8943C',
+                borderRadius: '6px',
+                color: 'white',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                fontSize: '11px',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+                opacity: saving ? 0.6 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (!saving) {
+                  e.currentTarget.style.background = '#c9a34f';
+                  e.currentTarget.style.borderColor = '#c9a34f';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#B8943C';
+                e.currentTarget.style.borderColor = '#B8943C';
+              }}
+            >
+              {saving ? 'Saving...' : '💾 Save'}
+            </button>
+            <button
+              onClick={resetRotation}
+              style={{
+                padding: '8px 12px',
+                background: 'white',
+                border: '2px solid #bdc3c7',
+                borderRadius: '6px',
+                color: '#2c3e50',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#B8943C';
+                e.currentTarget.style.borderColor = '#B8943C';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.borderColor = '#bdc3c7';
+                e.currentTarget.style.color = '#2c3e50';
+              }}
+            >
+              🔄
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* View Buttons */}

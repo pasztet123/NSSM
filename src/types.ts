@@ -100,6 +100,8 @@ export interface Product {
     [key: string]: string | undefined;
   };
   model3D?: Model3D; // Optional 3D model
+  model3DId?: string; // Optional 3D model ID from database
+  model3DRotation?: [number, number, number]; // Rotation for this product's 3D model in radians [x, y, z]
   sketch2D?: {
     points: Point[];
     segments: Segment[];
