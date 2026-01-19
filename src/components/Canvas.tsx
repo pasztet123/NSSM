@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Point, Segment, Unit, convertFromPixels, getUnitLabel, getGridSize } from '../types';
+import { Point, Segment, Unit, convertFromPixels, getUnitLabel } from '../types';
 import './Canvas.css';
 
 interface CanvasProps {
@@ -35,7 +35,6 @@ const Canvas = ({
   const [showBackgroundControls, setShowBackgroundControls] = useState(false);
 
   const POINT_RADIUS = 6;
-  const gridSize = getGridSize(unit);
   const unitLabel = getUnitLabel(unit);
 
   useEffect(() => {

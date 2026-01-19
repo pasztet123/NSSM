@@ -17,7 +17,7 @@ import { sample2DSketches } from './data/sample2DSketches';
 import { sampleProducts } from './data/sampleProducts';
 import { materials } from './data/materials';
 import { defaultPricingConfig, PricingConfig } from './data/pricingConfig';
-import { get3DModels, get3DModel, save2DSketch, get2DSketches, saveProductsToLocalStorage, loadProductsFromLocalStorage } from './lib/storage';
+import { get3DModels, get3DModel, save2DSketch, get2DSketches, saveProductsToLocalStorage } from './lib/storage';
 import { User } from '@supabase/supabase-js';
 import MaterialSelector from './components/MaterialSelector';
 import PriceDisplay from './components/PriceDisplay';
