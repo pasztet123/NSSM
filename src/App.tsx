@@ -3,7 +3,6 @@ import DimensionCanvas from './components/DimensionCanvas';
 import DimensionPanel from './components/DimensionPanel';
 import ProductBar from './components/ProductBar';
 import Toolbar from './components/Toolbar';
-import ErrorBoundary from './components/ErrorBoundary';
 import Auth from './components/Auth';
 import ModelCatalogSection from './components/ModelCatalogSection';
 import SlideOut3DViewer from './components/SlideOut3DViewer';
