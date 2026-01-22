@@ -5,19 +5,21 @@ import ProductBar from './components/ProductBar';
 import Toolbar from './components/Toolbar';
 import ErrorBoundary from './components/ErrorBoundary';
 import Auth from './components/Auth';
+import ModelCatalogSection from './components/ModelCatalogSection';
+import SlideOut3DViewer from './components/SlideOut3DViewer';
+import RightSidebar from './components/RightSidebar';
 // Lazy load 3D viewer to avoid blocking main app
-const ModelViewer3D = lazy(() => import('./components/SimpleModelViewer'));
 const ModelCatalog = lazy(() => import('./components/ModelCatalog'));
 const ModelUploader = lazy(() => import('./components/SimpleModelUploader'));
 const Sketch2DCatalog = lazy(() => import('./components/Sketch2DCatalog'));
 const SketchSaver = lazy(() => import('./components/SketchSaver'));
-import { Point, Segment, Unit, Model3D, Product, Material, convertToPixels } from './types';
+import { Point, Segment, Unit, Model3D, Product, Material, convertToPixels, EditMode } from './types';
 import { sampleModels } from './data/sampleModels';
 import { sample2DSketches } from './data/sample2DSketches';
 import { sampleProducts } from './data/sampleProducts';
 import { materials } from './data/materials';
 import { defaultPricingConfig, PricingConfig } from './data/pricingConfig';
-import { get3DModels, get3DModel, save2DSketch, get2DSketches, saveProductsToLocalStorage } from './lib/storage';
+import { get3DModels, get3DModel, save2DSketch, get2DSketches, saveProductsToLocalStorage, updateProductSettings } from './lib/storage';
 import { User } from '@supabase/supabase-js';
 import MaterialSelector from './components/MaterialSelector';
 import PriceDisplay from './components/PriceDisplay';
@@ -29,6 +31,7 @@ function App() {
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
   const [mode, setMode] = useState<'select' | 'addPoint' | 'addSegment'>('select');
+  const [editMode, setEditMode] = useState<EditMode>('free');
   const [unit, setUnit] = useState<Unit>('inch');
   const [showModelCatalog, setShowModelCatalog] = useState(false);
   const [showSketchCatalog, setShowSketchCatalog] = useState(false);
@@ -100,10 +103,23 @@ function App() {
   };
 
   const addPoint = (x: number, y: number) => {
+    // Generate label (A, B, C, ... Z, AA, AB, ...)
+    const index = points.length;
+    const getLabel = (idx: number): string => {
+      let label = '';
+      let num = idx;
+      do {
+        label = String.fromCharCode(65 + (num % 26)) + label;
+        num = Math.floor(num / 26) - 1;
+      } while (num >= 0);
+      return label;
+    };
+    
     const newPoint: Point = {
       id: `point-${Date.now()}`,
       x,
       y,
+      label: getLabel(index),
     };
     setPoints([...points, newPoint]);
 
@@ -152,8 +168,52 @@ function App() {
     setSegments([...segments, newSegment]);
   };
 
-  const updatePointPosition = (pointId: string, x: number, y: number) => {
-    setPoints(points.map(p => (p.id === pointId ? { ...p, x, y } : p)));
+  const updatePointPosition = (pointId: string, x: number, y: number, applyConstraints = true) => {
+    let finalX = x;
+    let finalY = y;
+
+    // Apply constraints based on edit mode
+    if (applyConstraints && editMode !== 'free') {
+      const connectedSegments = segments.filter(
+        s => s.startPointId === pointId || s.endPointId === pointId
+      );
+
+      if (connectedSegments.length > 0) {
+        // Use first connected segment for constraints
+        const segment = connectedSegments[0];
+        const isStart = segment.startPointId === pointId;
+        const anchorPoint = points.find(p => 
+          p.id === (isStart ? segment.endPointId : segment.startPointId)
+        );
+
+        if (anchorPoint) {
+          if (editMode === 'lockLength') {
+            // Lock length: point moves on circle around anchor
+            const dx = x - anchorPoint.x;
+            const dy = y - anchorPoint.y;
+            const currentDist = Math.sqrt(dx * dx + dy * dy);
+            const targetLength = segment.length;
+            
+            if (currentDist > 0) {
+              const scale = targetLength / currentDist;
+              finalX = anchorPoint.x + dx * scale;
+              finalY = anchorPoint.y + dy * scale;
+            }
+          } else if (editMode === 'lockAngle') {
+            // Lock angle: point moves along line
+            const currentAngle = segment.angle! * (Math.PI / 180);
+            const dx = x - anchorPoint.x;
+            const dy = y - anchorPoint.y;
+            const projectedLength = dx * Math.cos(currentAngle) + dy * Math.sin(currentAngle);
+            
+            finalX = anchorPoint.x + projectedLength * Math.cos(currentAngle);
+            finalY = anchorPoint.y + projectedLength * Math.sin(currentAngle);
+          }
+        }
+      }
+    }
+
+    setPoints(points.map(p => (p.id === pointId ? { ...p, x: finalX, y: finalY } : p)));
 
     // Update connected segments
     setSegments(segments.map(segment => {
@@ -162,12 +222,13 @@ function App() {
         const endPoint = points.find(p => p.id === segment.endPointId);
         
         if (startPoint && endPoint) {
-          const start = segment.startPointId === pointId ? { x, y } : startPoint;
-          const end = segment.endPointId === pointId ? { x, y } : endPoint;
+          const start = segment.startPointId === pointId ? { x: finalX, y: finalY } : startPoint;
+          const end = segment.endPointId === pointId ? { x: finalX, y: finalY } : endPoint;
           const dx = end.x - start.x;
           const dy = end.y - start.y;
           const length = Math.sqrt(dx * dx + dy * dy);
-          return { ...segment, length };
+          const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+          return { ...segment, length, angle };
         }
       }
       return segment;
@@ -296,26 +357,41 @@ function App() {
           // Fallback to model3D if available
           if (product.model3D) {
             setSelectedModel(product.model3D);
+            setShow3DViewer(true);
           }
         } else if (model) {
           setSelectedModel(model);
+          setShow3DViewer(true);
         }
       } catch (error) {
         console.error('Error loading product model:', error);
         // Fallback to model3D if available
         if (product.model3D) {
           setSelectedModel(product.model3D);
+          setShow3DViewer(true);
         }
       }
     } else if (product.model3D) {
       // If product has a 3D model object, display it
       setSelectedModel(product.model3D);
+      setShow3DViewer(true);
     }
   };
 
-  const handleProductUpdate = (updatedProduct: Product) => {
+  const handleProductUpdate = async (updatedProduct: Product) => {
+    console.log('📦 Updating product:', {
+      id: updatedProduct.id,
+      name: updatedProduct.name,
+      model3DRotation: updatedProduct.model3DRotation,
+      rotationDegrees: updatedProduct.model3DRotation?.map(r => (r * 180 / Math.PI).toFixed(2)),
+      model3DColor: updatedProduct.model3D?.color
+    });
+    
     const productIndex = products.findIndex(p => p.id === updatedProduct.id);
-    if (productIndex === -1) return;
+    if (productIndex === -1) {
+      console.error('❌ Product not found:', updatedProduct.id);
+      return;
+    }
 
     const updatedProducts = [...products];
     updatedProducts[productIndex] = updatedProduct;
@@ -323,6 +399,27 @@ function App() {
     setProducts(updatedProducts);
     setSelectedProduct(updatedProduct);
     saveProductsToLocalStorage(updatedProducts);
+    
+    // Save to Supabase if user is logged in
+    if (user) {
+      console.log('💾 Saving to Supabase...');
+      const { error } = await updateProductSettings(
+        updatedProduct.id,
+        user.id,
+        updatedProduct.model3DRotation,
+        updatedProduct.model3D?.color
+      );
+      
+      if (error) {
+        console.error('❌ Error saving to Supabase:', error.message);
+      } else {
+        console.log('✅ Successfully saved to Supabase');
+      }
+    } else {
+      console.log('💡 Not logged in - changes saved to localStorage only');
+    }
+    
+    console.log('✓ Product updated');
   };
 
   const handleMaterialSelection = (materialId: string) => {
@@ -557,67 +654,15 @@ function App() {
         <Auth onAuthChange={setUser} />
       </header>
 
-      {/* 3D Model Viewer - Top Section */}
-      {selectedModel && (
-        <ErrorBoundary fallback={
-          <div style={{
-            width: '100%',
-            height: '40vh',
-            background: 'linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            flexDirection: 'column',
-            gap: '1rem',
-            borderBottom: '2px solid #e74c3c'
-          }}>
-            <h3>3D Viewer Error</h3>
-            <p>Model: {selectedModel.name}</p>
-            <button 
-              onClick={() => setSelectedModel(null)}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#e74c3c',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Close
-            </button>
-          </div>
-        }>
-          <div className="viewer-3d-top">
-            <div className="viewer-3d-header">
-              <h3>{selectedModel.name}</h3>
-              <button className="close-3d-button" onClick={() => setSelectedModel(null)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" strokeLinecap="round"/>
-                  <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </button>
-            </div>
-            <Suspense fallback={
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff'
-              }}>
-                Loading 3D viewer...
-              </div>
-            }>
-              <ModelViewer3D model={selectedModel} product={selectedProduct || undefined} onProductUpdate={handleProductUpdate} />
-            </Suspense>
-          </div>
-        </ErrorBoundary>
-      )}
-
       {/* 2D Dimension Design Section */}
       <div className="dimension-section">
+        {/* Model Catalog Section - Collapsible at top */}
+        <ModelCatalogSection
+          models={allModels}
+          selectedModel={selectedModel}
+          onSelectModel={loadModel}
+        />
+
         <div className="section-header">
           <h2>2D Dimension Design</h2>
           <p>Design product dimensions - total dimensions determine material cost</p>
@@ -648,26 +693,13 @@ function App() {
         )}
         
         <div className="dimension-workspace">
-          <Toolbar 
-            mode={mode}
-            onModeChange={setMode}
-            onClearAll={clearAll}
-            unit={unit}
-            onUnitChange={setUnit}
-            onOpenModelCatalog={() => setShowModelCatalog(true)}
-            onOpenSketchCatalog={() => setShowSketchCatalog(true)}
-            onSaveSketch={() => setShowSketchSaver(true)}
-            onToggle3DViewer={() => setShow3DViewer(!show3DViewer)}
-            show3DViewer={show3DViewer}
-            onOpenUploader={() => setShowUploader(true)}
-          />
-          
           <DimensionCanvas
             points={points}
             segments={segments}
             selectedPointId={selectedPointId}
             selectedSegmentId={selectedSegmentId}
             mode={mode}
+            editMode={editMode}
             unit={unit}
             onAddPoint={addPoint}
             onAddSegment={addSegment}
@@ -688,6 +720,26 @@ function App() {
           />
         </div>
       </div>
+
+      <Toolbar 
+        mode={mode}
+        editMode={editMode}
+        onModeChange={setMode}
+        onEditModeChange={setEditMode}
+        onClearAll={clearAll}
+        unit={unit}
+        onUnitChange={setUnit}
+        onOpenModelCatalog={() => setShowModelCatalog(true)}
+        onOpenSketchCatalog={() => setShowSketchCatalog(true)}
+        onSaveSketch={() => setShowSketchSaver(true)}
+        onOpenUploader={() => setShowUploader(true)}
+      />
+
+      {/* Right sidebar with 3D toggle button */}
+      <RightSidebar
+        show3DViewer={show3DViewer}
+        onToggle3DViewer={() => setShow3DViewer(!show3DViewer)}
+      />
 
       {showModelCatalog && (
         <Suspense fallback={<div style={{position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', padding: '2rem', borderRadius: '8px'}}>Loading catalog...</div>}>
@@ -741,6 +793,15 @@ function App() {
         products={products}
         selectedProduct={selectedProduct}
         onSelectProduct={handleProductSelection}
+      />
+
+      {/* Slide-out 3D Viewer */}
+      <SlideOut3DViewer
+        isOpen={show3DViewer && selectedModel !== null}
+        model={selectedModel}
+        product={selectedProduct || undefined}
+        onClose={() => setShow3DViewer(false)}
+        onProductUpdate={handleProductUpdate}
       />
     </div>
   );

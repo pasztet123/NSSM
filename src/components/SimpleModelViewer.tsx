@@ -13,7 +13,7 @@ interface SimpleModelViewerProps {
   onProductUpdate?: (product: Product) => void;
 }
 
-const UploadedModel = ({ model, rotation }: { model: Model3D; rotation: [number, number, number] }) => {
+const UploadedModel = ({ model, rotation, color }: { model: Model3D; rotation: [number, number, number]; color?: string }) => {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -152,7 +152,7 @@ const UploadedModel = ({ model, rotation }: { model: Model3D; rotation: [number,
   return (
     <mesh geometry={geometry} castShadow receiveShadow rotation={rotation}>
       <meshStandardMaterial 
-        color={model.color || '#5dade2'} 
+        color={color || model.color || '#ffffff'} 
         metalness={0.7} 
         roughness={0.3}
         side={THREE.DoubleSide}
@@ -185,15 +185,46 @@ const SimpleModelViewer = ({ model, product, onProductUpdate }: SimpleModelViewe
     product?.model3DRotation || [0, 0, Math.PI / 2]
   );
   const [saving, setSaving] = useState(false);
+  const [modelColor, setModelColor] = useState<string>(model.color || '#ffffff');
+  const [colorPickerCollapsed, setColorPickerCollapsed] = useState(false);
 
   // Update rotation when product changes
   useEffect(() => {
+    console.log('🔄 Product changed, updating rotation:', {
+      productId: product?.id,
+      savedRotation: product?.model3DRotation,
+      savedRotationDegrees: product?.model3DRotation?.map(r => (r * 180 / Math.PI).toFixed(2))
+    });
+    
     if (product?.model3DRotation) {
       setRotation(product.model3DRotation);
     } else {
       setRotation([0, 0, Math.PI / 2]);
     }
   }, [product?.id, product?.model3DRotation]);
+
+  // Update color when model changes
+  useEffect(() => {
+    setModelColor(model.color || '#ffffff');
+  }, [model.id, model.color]);
+
+  // Auto-save color when it changes
+  useEffect(() => {
+    if (!model || !product || !onProductUpdate) return;
+    
+    const savedColor = model.color || '#ffffff';
+    if (modelColor === savedColor) return;
+    
+    const timer = setTimeout(() => {
+      console.log('🎨 Saving color:', modelColor);
+      // Update the model's color
+      const updatedModel = { ...model, color: modelColor };
+      const updatedProduct = { ...product, model3D: updatedModel };
+      onProductUpdate(updatedProduct);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [modelColor, model, product, onProductUpdate]);
 
   console.log('=== VIEWER RENDER ===');
   console.log('Model:', model);
@@ -215,14 +246,23 @@ const SimpleModelViewer = ({ model, product, onProductUpdate }: SimpleModelViewe
     try {
       const updatedProduct = { ...product, model3DRotation: rotation };
       
+      console.log('💾 Saving rotation:', {
+        productId: product.id,
+        productName: product.name,
+        rotation: rotation,
+        rotationDegrees: rotation.map(r => (r * 180 / Math.PI).toFixed(2))
+      });
+      
       if (onProductUpdate) {
         onProductUpdate(updatedProduct);
+        console.log('✓ Rotation saved successfully');
         alert('Rotation saved successfully!');
       } else {
+        console.error('❌ No update handler provided');
         alert('Cannot save: No update handler provided');
       }
     } catch (err) {
-      console.error('Error saving rotation:', err);
+      console.error('❌ Error saving rotation:', err);
       alert('Failed to save rotation');
     } finally {
       setSaving(false);
@@ -317,7 +357,7 @@ const SimpleModelViewer = ({ model, product, onProductUpdate }: SimpleModelViewe
         />
         <pointLight position={[-10, -10, -5]} intensity={0.5} />
 
-        <UploadedModel model={model} rotation={rotation} />
+        <UploadedModel model={model} rotation={rotation} color={modelColor} />
 
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} receiveShadow>
           <planeGeometry args={[50, 50]} />
@@ -329,6 +369,90 @@ const SimpleModelViewer = ({ model, product, onProductUpdate }: SimpleModelViewe
       
       <div className="viewer-controls">
         <p>🖱️ Left click + drag to rotate | Scroll to zoom | Right click + drag to pan</p>
+      </div>
+
+      {/* Color Picker */}
+      <div className="color-picker-panel" style={{
+        position: 'absolute',
+        top: '10px',
+        right: '360px',
+        background: '#163C6B',
+        padding: '0',
+        borderRadius: '8px',
+        color: 'white',
+        minWidth: colorPickerCollapsed ? '160px' : '200px',
+        zIndex: 10,
+        fontSize: '13px',
+        overflow: 'hidden',
+        border: '2px solid #dee2e6',
+      }}>
+        <div style={{
+          background: '#0d2847',
+          padding: '8px 12px',
+          borderBottom: colorPickerCollapsed ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+        }} onClick={() => setColorPickerCollapsed(!colorPickerCollapsed)}>
+          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ color: '#B8943C' }}>🎨</span>
+            Model Color
+          </h3>
+          <span style={{ fontSize: '16px', transition: 'transform 0.2s', transform: colorPickerCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+        </div>
+
+        {!colorPickerCollapsed && (
+          <div style={{ padding: '12px' }}>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px', display: 'block' }}>
+                Choose color:
+              </label>
+              <input
+                type="color"
+                value={modelColor}
+                onChange={(e) => setModelColor(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '40px',
+                  border: '2px solid #dee2e6',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+              {['#5dade2', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#34495e', '#c0c0c0', '#ffffff', '#c0392b', '#16a085'].map((color) => (
+                <button
+                  key={color}
+                  onClick={() => setModelColor(color)}
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    background: color,
+                    border: modelColor === color ? '3px solid #B8943C' : (color === '#ffffff' ? '2px solid #95a5a6' : '2px solid #dee2e6'),
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  title={`Set color to ${color}`}
+                />
+              ))}
+            </div>
+
+            <div style={{ fontSize: '11px', color: '#bdc3c7', marginBottom: '8px' }}>
+              Current: <span style={{ 
+                fontWeight: '600', 
+                color: modelColor,
+                background: 'white',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontFamily: 'monospace'
+              }}>{modelColor}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Rotation Controls */}

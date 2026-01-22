@@ -1,0 +1,150 @@
+.model-catalog-section {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.model-catalog-section.collapsed .model-catalog-content {
+  display: none;
+}
+
+.model-catalog-header {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: white;
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.model-catalog-header:hover {
+  background: #f8f9fa;
+}
+
+.model-catalog-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.model-catalog-header .chevron {
+  transition: transform 0.3s ease;
+}
+
+.model-catalog-header .chevron.up {
+  transform: rotate(180deg);
+}
+
+.model-catalog-header .chevron.down {
+  transform: rotate(0deg);
+}
+
+.model-catalog-content {
+  padding: 1rem 1.5rem 1.5rem;
+  background: #f8f9fa;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.model-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.model-tile {
+  background: white;
+  border: 3px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.model-tile:hover {
+  border-color: #163C6B;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 60, 107, 0.15);
+}
+
+.model-tile.active {
+  border-color: #B8943C;
+  background: #fffef8;
+}
+
+.model-tile-image {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.model-tile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.model-tile-no-image {
+  color: #adb5bd;
+}
+
+.model-tile-content {
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.model-tile-content h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2c3e50;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-tile-type {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #6c757d;
+  text-transform: capitalize;
+}
+
+.model-tile-selected {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: #B8943C;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(184, 148, 60, 0.4);
+}

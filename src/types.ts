@@ -2,7 +2,10 @@ export interface Point {
   id: string;
   x: number;
   y: number;
+  label?: string;
 }
+
+export type EditMode = 'free' | 'lockLength' | 'lockAngle';
 
 export interface Segment {
   id: string;

@@ -391,6 +391,126 @@ export function saveProductsToLocalStorage(products: any[]): void {
 }
 
 /**
+ * Update product rotation and color in Supabase
+ */
+export async function updateProductSettings(
+  productId: string,
+  userId: string,
+  rotation?: [number, number, number],
+  color?: string
+): Promise<{ error: Error | null }> {
+  try {
+    console.log('🔧 updateProductSettings called:', { productId, userId, rotation, color });
+    
+    const upsertData: any = {
+      id: productId,
+      user_id: userId,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (rotation) {
+      upsertData.model_3d_rotation = rotation;
+      console.log('  📐 Setting rotation:', rotation);
+    }
+    
+    if (color) {
+      upsertData.model_3d_color = color;
+      console.log('  🎨 Setting color:', color);
+    }
+
+    console.log('  💾 Upserting to Supabase...');
+    const { data, error } = await supabase
+      .from('flashing_products')
+      .upsert(upsertData)
+      .select();
+
+    if (error) {
+      console.error('  ❌ Supabase error:', error);
+      throw error;
+    }
+
+    console.log('  ✅ Upsert successful:', data);
+    return { error: null };
+  } catch (error) {
+    console.error('❌ Error updating product settings:', error);
+    return { error: error as Error };
+  }
+}
+
+/**
+ * Get product settings from Supabase
+ */
+export async function getProductSettings(
+  productId: string,
+  userId: string
+): Promise<{ rotation?: [number, number, number]; color?: string; error: Error | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('flashing_products')
+      .select('model_3d_rotation, model_3d_color')
+      .eq('id', productId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      rotation: data?.model_3d_rotation,
+      color: data?.model_3d_color,
+      error: null
+    };
+  } catch (error) {
+    console.error('Error getting product settings:', error);
+    return { error: error as Error };
+  }
+}
+
+/**
+ * Save full product to Supabase
+ */
+export async function saveProductToSupabase(
+  product: any,
+  userId: string
+): Promise<{ error: Error | null }> {
+  try {
+    const productData = {
+      id: product.id,
+      user_id: userId,
+      name: product.name,
+      category: product.category,
+      product_type: product.productType,
+      description: product.description,
+      long_description: product.longDescription,
+      base_price: product.basePrice,
+      currency: product.currency,
+      images: product.images,
+      specifications: product.specifications,
+      model_3d_id: product.model3DId,
+      model_3d_rotation: product.model3DRotation,
+      model_3d_color: product.model3D?.color,
+      sketch_2d: product.sketch2D,
+      default_dimensions: product.defaultDimensions,
+      selected_material: product.selectedMaterial,
+    };
+
+    const { error } = await supabase
+      .from('flashing_products')
+      .upsert(productData, { onConflict: 'id' });
+
+    if (error) {
+      throw error;
+    }
+
+    return { error: null };
+  } catch (error) {
+    console.error('Error saving product to Supabase:', error);
+    return { error: error as Error };
+  }
+}
+
+/**
  * Load products from localStorage
  */
 export function loadProductsFromLocalStorage(): any[] | null {

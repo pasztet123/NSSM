@@ -12,7 +12,7 @@ interface ModelViewer3DProps {
   model: Model3D;
 }
 
-const UploadedModel = ({ model }: { model: Model3D }) => {
+const UploadedModel = ({ model, color }: { model: Model3D; color?: string }) => {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -310,7 +310,7 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
     <Center>
       <mesh geometry={geometry} castShadow receiveShadow>
         <meshStandardMaterial 
-          color={model.color || '#5dade2'} 
+          color={color || model.color || '#ffffff'} 
           metalness={0.7} 
           roughness={0.3}
           side={THREE.DoubleSide}
@@ -320,7 +320,7 @@ const UploadedModel = ({ model }: { model: Model3D }) => {
   );
 };
 
-const ModelGeometry = ({ model }: { model: Model3D }) => {
+const ModelGeometry = ({ model, color }: { model: Model3D; color?: string }) => {
   const meshRef = useRef<THREE.Mesh>(null);
 
   useEffect(() => {
@@ -328,11 +328,11 @@ const ModelGeometry = ({ model }: { model: Model3D }) => {
   }, [model]);
 
   if (model.geometryType === 'uploaded') {
-    return <UploadedModel model={model} />;
+    return <UploadedModel model={model} color={color} />;
   }
 
   const renderGeometry = () => {
-    const color = model.color || '#5dade2';
+    const materialColor = color || model.color || '#ffffff';
 
     switch (model.geometryType) {
       case 'box':
@@ -345,7 +345,7 @@ const ModelGeometry = ({ model }: { model: Model3D }) => {
                 (model.dimensions?.height || 50) / 10,
               ]}
             />
-            <meshStandardMaterial color={color} metalness={0.7} roughness={0.3} />
+            <meshStandardMaterial color={materialColor} metalness={0.7} roughness={0.3} />
           </mesh>
         );
 
@@ -360,7 +360,7 @@ const ModelGeometry = ({ model }: { model: Model3D }) => {
                 32,
               ]}
             />
-            <meshStandardMaterial color={color} metalness={0.7} roughness={0.3} />
+            <meshStandardMaterial color={materialColor} metalness={0.7} roughness={0.3} />
           </mesh>
         );
 
@@ -370,12 +370,12 @@ const ModelGeometry = ({ model }: { model: Model3D }) => {
             {/* Horizontal part */}
             <mesh position={[4, -2.75, 0]} castShadow receiveShadow>
               <boxGeometry args={[8, 0.5, (model.dimensions?.depth || 5) / 10]} />
-              <meshStandardMaterial color={color} metalness={0.7} roughness={0.3} />
+              <meshStandardMaterial color={materialColor} metalness={0.7} roughness={0.3} />
             </mesh>
             {/* Vertical part */}
             <mesh position={[0.25, 0.5, 0]} castShadow receiveShadow>
               <boxGeometry args={[0.5, 6, (model.dimensions?.depth || 5) / 10]} />
-              <meshStandardMaterial color={color} metalness={0.7} roughness={0.3} />
+              <meshStandardMaterial color={materialColor} metalness={0.7} roughness={0.3} />
             </mesh>
           </group>
         );
@@ -386,12 +386,12 @@ const ModelGeometry = ({ model }: { model: Model3D }) => {
             {/* Horizontal part (top) */}
             <mesh position={[0, 2.5, 0]} castShadow receiveShadow>
               <boxGeometry args={[6, 0.5, (model.dimensions?.depth || 5) / 10]} />
-              <meshStandardMaterial color={color} metalness={0.7} roughness={0.3} />
+              <meshStandardMaterial color={materialColor} metalness={0.7} roughness={0.3} />
             </mesh>
             {/* Vertical part (stem) */}
             <mesh position={[0, -0.5, 0]} castShadow receiveShadow>
               <boxGeometry args={[1, 5, (model.dimensions?.depth || 5) / 10]} />
-              <meshStandardMaterial color={color} metalness={0.7} roughness={0.3} />
+              <meshStandardMaterial color={materialColor} metalness={0.7} roughness={0.3} />
             </mesh>
           </group>
         );
@@ -400,7 +400,7 @@ const ModelGeometry = ({ model }: { model: Model3D }) => {
         return (
           <mesh ref={meshRef} castShadow receiveShadow>
             <boxGeometry args={[5, 5, 5]} />
-            <meshStandardMaterial color={color} metalness={0.7} roughness={0.3} />
+            <meshStandardMaterial color={materialColor} metalness={0.7} roughness={0.3} />
           </mesh>
         );
     }
@@ -429,6 +429,13 @@ const CameraController = ({
 const ModelViewer3D = ({ model }: ModelViewer3DProps) => {
   const controlsRef = useRef<any>(null);
   const [animating, setAnimating] = useState(false);
+  const [modelColor, setModelColor] = useState<string>(model.color || '#ffffff');
+  const [colorPickerCollapsed, setColorPickerCollapsed] = useState(false);
+
+  // Update color when model changes
+  useEffect(() => {
+    setModelColor(model.color || '#ffffff');
+  }, [model.id, model.color]);
 
   const animateCamera = (targetPosition: [number, number, number], duration: number = 600) => {
     if (!controlsRef.current) return;
@@ -509,7 +516,7 @@ const ModelViewer3D = ({ model }: ModelViewer3DProps) => {
           <pointLight position={[-10, -10, -5]} intensity={0.5} />
 
           {/* Model */}
-          <ModelGeometry model={model} />
+          <ModelGeometry model={model} color={modelColor} />
 
           {/* Ground plane */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} receiveShadow>
@@ -523,6 +530,90 @@ const ModelViewer3D = ({ model }: ModelViewer3DProps) => {
         
         <div className="viewer-controls">
           <p>🖱️ Left click + drag to rotate | Scroll to zoom | Right click + drag to pan</p>
+        </div>
+
+        {/* Color Picker */}
+        <div className="color-picker-panel" style={{
+          position: 'absolute',
+          top: '10px',
+          right: '360px',
+          background: '#163C6B',
+          padding: '0',
+          borderRadius: '8px',
+          color: 'white',
+          minWidth: colorPickerCollapsed ? '160px' : '200px',
+          zIndex: 10,
+          fontSize: '13px',
+          overflow: 'hidden',
+          border: '2px solid #dee2e6',
+        }}>
+          <div style={{
+            background: '#0d2847',
+            padding: '8px 12px',
+            borderBottom: colorPickerCollapsed ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+          }} onClick={() => setColorPickerCollapsed(!colorPickerCollapsed)}>
+            <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: '#B8943C' }}>🎨</span>
+              Model Color
+            </h3>
+            <span style={{ fontSize: '16px', transition: 'transform 0.2s', transform: colorPickerCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+          </div>
+
+          {!colorPickerCollapsed && (
+            <div style={{ padding: '12px' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px', display: 'block' }}>
+                  Choose color:
+                </label>
+                <input
+                  type="color"
+                  value={modelColor}
+                  onChange={(e) => setModelColor(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    border: '2px solid #dee2e6',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                {['#5dade2', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#34495e', '#c0c0c0', '#ffffff', '#c0392b', '#16a085'].map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setModelColor(color)}
+                    style={{
+                      width: '30px',
+                      height: '30px',
+                      background: color,
+                      border: modelColor === color ? '3px solid #B8943C' : (color === '#ffffff' ? '2px solid #95a5a6' : '2px solid #dee2e6'),
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    title={`Set color to ${color}`}
+                  />
+                ))}
+              </div>
+
+              <div style={{ fontSize: '11px', color: '#bdc3c7', marginBottom: '8px' }}>
+                Current: <span style={{ 
+                  fontWeight: '600', 
+                  color: modelColor,
+                  background: 'white',
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  fontFamily: 'monospace'
+                }}>{modelColor}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* View Buttons */}

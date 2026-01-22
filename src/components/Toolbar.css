@@ -1,43 +1,55 @@
 .toolbar {
-  width: 200px;
+  position: fixed;
+  bottom: 60px; /* Nad ProductBar toggle button */
+  left: 0;
+  right: 0;
   background-color: #ecf0f1;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1.5rem;
+  border-top: 2px solid #bdc3c7;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1.5rem;
-  align-self: flex-start;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  z-index: 850;
 }
 
 .toolbar-section {
-  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0;
 }
 
 .toolbar-section h3 {
-  font-size: 0.9rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: #2c3e50;
-  margin-bottom: 0.75rem;
+  margin: 0;
+  margin-right: 0.35rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .toolbar-button {
-  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.5rem;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0;
   border: 2px solid #bdc3c7;
   background-color: #ffffff;
   color: #2c3e50;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 500;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .toolbar-button:hover {

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Point, Segment, Unit, convertFromPixels, getUnitLabel, getGridSize } from '../types';
+import { Point, Segment, Unit, EditMode, convertFromPixels, getUnitLabel, getGridSize } from '../types';
 import './DimensionCanvas.css';
 
 interface DimensionCanvasProps {
@@ -8,6 +8,7 @@ interface DimensionCanvasProps {
   selectedPointId: string | null;
   selectedSegmentId: string | null;
   mode: 'select' | 'addPoint' | 'addSegment';
+  editMode: EditMode;
   unit: Unit;
   onAddPoint: (x: number, y: number) => void;
   onAddSegment: (startPointId: string, endPointId: string) => void;
@@ -24,6 +25,7 @@ const DimensionCanvas = ({
   selectedPointId,
   selectedSegmentId,
   mode,
+  editMode,
   unit,
   onAddPoint,
   onAddSegment,
@@ -244,16 +246,64 @@ const DimensionCanvas = ({
       ctx.lineWidth = 2;
       ctx.stroke();
 
+      // Draw constraint visualization when dragging
+      if (point.id === draggingPointId && editMode !== 'free') {
+        const connectedSegments = segments.filter(
+          s => s.startPointId === point.id || s.endPointId === point.id
+        );
+        
+        if (connectedSegments.length > 0) {
+          const segment = connectedSegments[0];
+          const isStart = segment.startPointId === point.id;
+          const anchorPoint = points.find(p => 
+            p.id === (isStart ? segment.endPointId : segment.startPointId)
+          );
+
+          if (anchorPoint) {
+            if (editMode === 'lockLength') {
+              // Draw circle showing locked length constraint
+              ctx.beginPath();
+              ctx.arc(anchorPoint.x, anchorPoint.y, segment.length, 0, 2 * Math.PI);
+              ctx.strokeStyle = 'rgba(52, 152, 219, 0.4)';
+              ctx.lineWidth = 1;
+              ctx.setLineDash([5, 5]);
+              ctx.stroke();
+              ctx.setLineDash([]);
+            } else if (editMode === 'lockAngle') {
+              // Draw line showing locked angle constraint
+              const angle = segment.angle! * (Math.PI / 180);
+              const extendLength = 2000;
+              ctx.beginPath();
+              ctx.moveTo(
+                anchorPoint.x - extendLength * Math.cos(angle),
+                anchorPoint.y - extendLength * Math.sin(angle)
+              );
+              ctx.lineTo(
+                anchorPoint.x + extendLength * Math.cos(angle),
+                anchorPoint.y + extendLength * Math.sin(angle)
+              );
+              ctx.strokeStyle = 'rgba(243, 156, 18, 0.4)';
+              ctx.lineWidth = 1;
+              ctx.setLineDash([5, 5]);
+              ctx.stroke();
+              ctx.setLineDash([]);
+            }
+          }
+        }
+      }
+
       // Draw point label
-      ctx.fillStyle = '#2c3e50';
-      ctx.font = 'bold 10px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(point.id.split('-')[1] || '?', point.x, point.y + 3);
+      if (point.label) {
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(point.label, point.x, point.y + 4);
+      }
     });
 
     // Restore context
     ctx.restore();
-  }, [points, segments, selectedPointId, selectedSegmentId, unit, mode, tempSegmentStart, mousePos, zoom, pan]);
+  }, [points, segments, selectedPointId, selectedSegmentId, unit, mode, tempSegmentStart, mousePos, zoom, pan, draggingPointId, editMode]);
 
   const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
