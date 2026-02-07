@@ -3,15 +3,17 @@ import './Toolbar.css';
 
 interface ToolbarProps {
   mode: 'select' | 'addPoint' | 'addSegment';
-  editMode: EditMode;
+  editMode?: EditMode;
   onModeChange: (mode: 'select' | 'addPoint' | 'addSegment') => void;
-  onEditModeChange: (mode: EditMode) => void;
+  onEditModeChange?: (mode: EditMode) => void;
   onClearAll: () => void;
   unit: Unit;
   onUnitChange: (unit: Unit) => void;
   onOpenModelCatalog: () => void;
   onOpenSketchCatalog: () => void;
   onSaveSketch: () => void;
+  onToggle3DViewer?: () => void;
+  show3DViewer?: boolean;
   onOpenUploader: () => void;
 }
 

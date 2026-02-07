@@ -18,7 +18,6 @@ export const generateProductionPDF = async (options: PDFGenerationOptions): Prom
     unit,
     projectName = 'Product Specification',
     materialInfo,
-    thickness,
   } = options;
 
   const doc = new jsPDF({
