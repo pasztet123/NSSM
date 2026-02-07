@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Point, Segment, Unit, EditMode, convertFromPixels, getUnitLabel, getGridSize } from '../types';
+import { Point, Segment, Unit, EditMode, Material, convertFromPixels, getUnitLabel, getGridSize, calculateBendAllowance } from '../types';
 import './DimensionCanvas.css';
 
 interface DimensionCanvasProps {
@@ -8,8 +8,9 @@ interface DimensionCanvasProps {
   selectedPointId: string | null;
   selectedSegmentId: string | null;
   mode: 'select' | 'addPoint' | 'addSegment';
-  editMode: EditMode;
+  editMode?: EditMode;
   unit: Unit;
+  material?: Material | null;
   onAddPoint: (x: number, y: number) => void;
   onAddSegment: (startPointId: string, endPointId: string) => void;
   onSelectPoint: (id: string | null) => void;
@@ -17,6 +18,7 @@ interface DimensionCanvasProps {
   onUpdatePointPosition: (id: string, x: number, y: number) => void;
   onUpdateSegmentAngle: (id: string, angle: number) => void;
   onRotateShape: (angle: number) => void;
+  onMergePoints?: (sourcePointId: string, targetPointId: string) => void;
 }
 
 const DimensionCanvas = ({
@@ -27,6 +29,7 @@ const DimensionCanvas = ({
   mode,
   editMode,
   unit,
+  material,
   onAddPoint,
   onAddSegment,
   onSelectPoint,
@@ -34,6 +37,7 @@ const DimensionCanvas = ({
   onUpdatePointPosition,
   onUpdateSegmentAngle,
   onRotateShape,
+  onMergePoints,
 }: DimensionCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [draggingPointId, setDraggingPointId] = useState<string | null>(null);
@@ -157,25 +161,71 @@ const DimensionCanvas = ({
         const label = segment.label || String.fromCharCode(65 + index); // A, B, C, ...
         const lengthInUnits = convertFromPixels(segment.length, unit);
         
-        // Draw label background
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillRect(midX - 30, midY - 25, 60, 35);
+        // Calculate bend allowance dimensions if material is available and there's a bend
+        let bendInfo: { inner: number; neutral: number; outer: number } | null = null;
+        if (material && index < segments.length - 1) {
+          const nextSegment = segments[index + 1];
+          const bendAngle = getAngleBetweenSegments(segment, nextSegment);
+          
+          if (bendAngle !== null && bendAngle > 0 && bendAngle < 180) {
+            // Convert from pixels to inches
+            const lengthInches = unit === 'inch' 
+              ? lengthInUnits 
+              : lengthInUnits / 25.4;
+            
+            // Calculate bend allowance for the bend at the end of this segment
+            const actualBendAngle = Math.abs(180 - bendAngle);
+            const bend = calculateBendAllowance(
+              actualBendAngle,
+              material.thicknessInches,
+              material.kFactor
+            );
+            
+            // Convert back to current unit
+            const unitMultiplier = unit === 'inch' ? 1 : 25.4;
+            bendInfo = {
+              inner: lengthInches * unitMultiplier,
+              neutral: (lengthInches + bend.neutralAxisLength) * unitMultiplier,
+              outer: (lengthInches + bend.outerLength - bend.innerLength) * unitMultiplier,
+            };
+          }
+        }
+        
+        // Adjust background size if showing bend info
+        const backgroundHeight = bendInfo ? 70 : 45;
+        const backgroundWidth = bendInfo ? 100 : 85;
+        
+        // Draw label background - szare tło
+        ctx.fillStyle = 'rgba(150, 150, 150, 0.85)';
+        ctx.fillRect(midX - backgroundWidth/2, midY - 30, backgroundWidth, backgroundHeight);
         
         // Draw label text
-        ctx.fillStyle = '#2c3e50';
-        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(label, midX, midY - 10);
+        ctx.fillText(label, midX, midY - 8);
         
-        // Draw length
-        ctx.font = '12px Arial';
-        ctx.fillText(`${lengthInUnits.toFixed(1)} ${unitLabel}`, midX, midY + 5);
-
-        // Draw angle if available
-        if (segment.angle !== undefined) {
-          ctx.font = '10px Arial';
-          ctx.fillStyle = '#3498db';
-          ctx.fillText(`${segment.angle.toFixed(1)}°`, midX, midY + 18);
+        // Draw dimensions
+        if (bendInfo) {
+          // Show three dimensions
+          ctx.font = '14px Arial';
+          ctx.fillStyle = '#ffcccc'; // Light red for compression (inner)
+          ctx.fillText(`↓ ${bendInfo.inner.toFixed(2)}`, midX, midY + 6);
+          
+          ctx.fillStyle = '#ffffff'; // White for neutral axis
+          ctx.fillText(`⊙ ${bendInfo.neutral.toFixed(2)}`, midX, midY + 20);
+          
+          ctx.fillStyle = '#ccddff'; // Light blue for tension (outer)
+          ctx.fillText(`↑ ${bendInfo.outer.toFixed(2)}`, midX, midY + 34);
+          
+          ctx.fillStyle = '#dddddd';
+          ctx.font = '13px Arial';
+          ctx.fillText(unitLabel, midX, midY + 48);
+        } else {
+          // Show single dimension
+          ctx.font = '18px Arial';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(`${lengthInUnits.toFixed(1)} ${unitLabel}`, midX, midY + 10);
         }
       }
     });
@@ -203,11 +253,25 @@ const DimensionCanvas = ({
             ctx.stroke();
             ctx.setLineDash([]);
             
+            // Draw angle text background
+            const angleText = `${angle.toFixed(1)}°`;
+            ctx.font = 'bold 18px Arial';
+            const textMetrics = ctx.measureText(angleText);
+            const textWidth = textMetrics.width;
+            const bgPadding = 8;
+            
+            ctx.fillStyle = 'rgba(150, 150, 150, 0.85)';
+            ctx.fillRect(
+              commonPoint.x - textWidth/2 - bgPadding,
+              commonPoint.y - 45,
+              textWidth + bgPadding * 2,
+              28
+            );
+            
             // Draw angle text
-            ctx.fillStyle = '#9b59b6';
-            ctx.font = 'bold 11px Arial';
+            ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
-            ctx.fillText(`${angle.toFixed(1)}°`, commonPoint.x, commonPoint.y - 30);
+            ctx.fillText(angleText, commonPoint.x, commonPoint.y - 25);
           }
         }
       }
@@ -230,10 +294,35 @@ const DimensionCanvas = ({
 
     // Draw points
     points.forEach(point => {
+      const MERGE_THRESHOLD = 15;
+      let isMergeTarget = false;
+      
+      // Check if this point is a merge target (another point is being dragged close to it)
+      if (draggingPointId && draggingPointId !== point.id) {
+        const draggedPoint = points.find(p => p.id === draggingPointId);
+        if (draggedPoint) {
+          const dx = point.x - draggedPoint.x;
+          const dy = point.y - draggedPoint.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          isMergeTarget = distance < MERGE_THRESHOLD;
+        }
+      }
+      
       ctx.beginPath();
       ctx.arc(point.x, point.y, POINT_RADIUS, 0, 2 * Math.PI);
       
-      if (point.id === selectedPointId) {
+      if (isMergeTarget) {
+        // Highlight merge target with green
+        ctx.fillStyle = '#2ecc71';
+        // Draw pulsing ring around target
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, POINT_RADIUS + 6, 0, 2 * Math.PI);
+        ctx.strokeStyle = 'rgba(46, 204, 113, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      } else if (point.id === selectedPointId) {
         ctx.fillStyle = '#e74c3c';
       } else if (point.id === tempSegmentStart) {
         ctx.fillStyle = '#f39c12';
@@ -294,8 +383,22 @@ const DimensionCanvas = ({
 
       // Draw point label
       if (point.label) {
-        ctx.fillStyle = '#2c3e50';
-        ctx.font = 'bold 12px Arial';
+        ctx.font = 'bold 18px Arial';
+        const textMetrics = ctx.measureText(point.label);
+        const textWidth = textMetrics.width;
+        const bgPadding = 6;
+        
+        // Draw background
+        ctx.fillStyle = 'rgba(150, 150, 150, 0.85)';
+        ctx.fillRect(
+          point.x - textWidth/2 - bgPadding,
+          point.y - 14,
+          textWidth + bgPadding * 2,
+          26
+        );
+        
+        // Draw label
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.fillText(point.label, point.x, point.y + 4);
       }
@@ -303,7 +406,7 @@ const DimensionCanvas = ({
 
     // Restore context
     ctx.restore();
-  }, [points, segments, selectedPointId, selectedSegmentId, unit, mode, tempSegmentStart, mousePos, zoom, pan, draggingPointId, editMode]);
+  }, [points, segments, selectedPointId, selectedSegmentId, unit, material, mode, tempSegmentStart, mousePos, zoom, pan, draggingPointId, editMode]);
 
   const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -453,6 +556,29 @@ const DimensionCanvas = ({
   };
 
   const handleMouseUp = () => {
+    // Check if we were dragging a point and if it's close to another point
+    if (draggingPointId && onMergePoints) {
+      const draggedPoint = points.find(p => p.id === draggingPointId);
+      if (draggedPoint) {
+        const MERGE_THRESHOLD = 15; // pixels - distance at which points can merge
+        
+        // Find if there's another point nearby (excluding the dragged point)
+        for (const point of points) {
+          if (point.id === draggingPointId) continue;
+          
+          const dx = point.x - draggedPoint.x;
+          const dy = point.y - draggedPoint.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < MERGE_THRESHOLD) {
+            // Merge the dragged point into the nearby point
+            onMergePoints(draggingPointId, point.id);
+            break; // Only merge with one point
+          }
+        }
+      }
+    }
+    
     setDraggingPointId(null);
     setIsPanning(false);
   };

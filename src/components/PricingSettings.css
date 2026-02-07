@@ -25,7 +25,7 @@
 }
 
 .settings-header {
-  background: #163C6B;
+  background: #323E48;
   padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -260,7 +260,7 @@
   align-items: center;
   gap: 2rem;
   padding: 1.5rem;
-  background: #163C6B;
+  background: #323E48;
   border-radius: 8px;
   color: white;
 }

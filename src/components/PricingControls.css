@@ -7,7 +7,7 @@
 }
 
 .pricing-controls-header {
-  background: #163C6B;
+  background: #323E48;
   padding: 0.75rem 1.5rem;
 }
 
@@ -134,7 +134,7 @@
     border-color: #B8943C;
   }
   50% {
-    border-color: #163C6B;
+    border-color: #323E48;
   }
 }
 

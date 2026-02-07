@@ -103,8 +103,8 @@
 }
 
 .category-button.active {
-  background: #163C6B;
-  border-color: #163C6B;
+  background: #323E48;
+  border-color: #323E48;
   color: white;
 }
 
@@ -233,7 +233,7 @@
   letter-spacing: 0.5px;
 }
 
-.price-value {
+.product-price-value {
   font-size: 1.3rem;
   font-weight: 700;
   color: #27ae60;

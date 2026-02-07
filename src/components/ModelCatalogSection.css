@@ -83,7 +83,7 @@
 }
 
 .model-tile:hover {
-  border-color: #163C6B;
+  border-color: #323E48;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(22, 60, 107, 0.15);
 }

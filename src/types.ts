@@ -44,6 +44,80 @@ export function getGridSize(unit: Unit): number {
   return unit === 'mm' ? 10 * PIXELS_PER_MM : 0.5 * MM_PER_INCH * PIXELS_PER_MM;
 }
 
+// Bend allowance calculations
+export interface BendAllowanceResult {
+  neutralAxisLength: number; // Length along the neutral axis
+  innerLength: number; // Length on compression side
+  outerLength: number; // Length on tension side
+  bendAllowance: number; // The bend allowance value
+}
+
+/**
+ * Calculate bend allowance and dimensions for a bend
+ * @param angle - Bend angle in degrees
+ * @param thickness - Material thickness in inches
+ * @param kFactor - K-factor (typically 0.33-0.50)
+ * @param innerRadius - Inside bend radius in inches (optional, defaults to thickness)
+ * @returns BendAllowanceResult with all calculated dimensions
+ */
+export function calculateBendAllowance(
+  angle: number,
+  thickness: number,
+  kFactor: number,
+  innerRadius?: number
+): BendAllowanceResult {
+  const radius = innerRadius ?? thickness;
+  const angleRad = (angle * Math.PI) / 180;
+  
+  // Bend allowance formula: BA = θ × (R + K × T)
+  // where θ is angle in radians, R is inner radius, K is k-factor, T is thickness
+  const bendAllowance = angleRad * (radius + kFactor * thickness);
+  
+  // Neutral axis is at distance K × T from inner surface
+  const neutralAxisRadius = radius + kFactor * thickness;
+  const neutralAxisLength = angleRad * neutralAxisRadius;
+  
+  // Inner surface (compression)
+  const innerLength = angleRad * radius;
+  
+  // Outer surface (tension)
+  const outerRadius = radius + thickness;
+  const outerLength = angleRad * outerRadius;
+  
+  return {
+    neutralAxisLength,
+    innerLength,
+    outerLength,
+    bendAllowance,
+  };
+}
+
+/**
+ * Calculate flat pattern length including bends
+ * @param straightLengths - Array of straight section lengths
+ * @param bendAngles - Array of bend angles in degrees
+ * @param thickness - Material thickness
+ * @param kFactor - K-factor
+ * @param innerRadius - Inside bend radius (optional)
+ * @returns Total developed length
+ */
+export function calculateFlatPatternLength(
+  straightLengths: number[],
+  bendAngles: number[],
+  thickness: number,
+  kFactor: number,
+  innerRadius?: number
+): number {
+  let totalLength = straightLengths.reduce((sum, length) => sum + length, 0);
+  
+  bendAngles.forEach(angle => {
+    const bend = calculateBendAllowance(angle, thickness, kFactor, innerRadius);
+    totalLength += bend.bendAllowance;
+  });
+  
+  return totalLength;
+}
+
 export interface Model3D {
   id: string;
   name: string;
@@ -69,6 +143,8 @@ export interface Material {
   name: string;
   type: 'copper' | 'steel' | 'aluminum';
   thickness: string; // e.g., "16 oz", "24 Ga", "0.032\""
+  thicknessInches: number; // Actual thickness in inches for bend calculations
+  kFactor: number; // K-factor for bend allowance calculations
   finish?: string; // e.g., "Kynar"
   sheetPrice: number; // Price per full sheet
   sheetWidth: number; // Sheet width in inches (36" for copper, 48" for aluminum/steel)

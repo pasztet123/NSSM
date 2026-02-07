@@ -29,7 +29,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  background: #163C6B;
+  background: #323E48;
   color: white;
 }
 
@@ -84,7 +84,7 @@
 
 .edit-mode-button.active {
   background: rgba(255, 255, 255, 0.9);
-  color: #163C6B;
+  color: #323E48;
   border-color: white;
 }
 
@@ -131,7 +131,7 @@
 }
 
 .catalog-item.selected {
-  border-color: #163C6B;
+  border-color: #323E48;
   box-shadow: 0 0 0 3px rgba(22, 60, 107, 0.2);
 }
 
@@ -140,7 +140,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #163C6B;
+  background: #323E48;
   position: relative;
 }
 

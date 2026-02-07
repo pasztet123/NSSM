@@ -537,7 +537,7 @@ const ModelViewer3D = ({ model }: ModelViewer3DProps) => {
           position: 'absolute',
           top: '10px',
           right: '360px',
-          background: '#163C6B',
+          background: '#323E48',
           padding: '0',
           borderRadius: '8px',
           color: 'white',

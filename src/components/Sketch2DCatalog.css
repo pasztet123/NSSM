@@ -25,7 +25,7 @@
 }
 
 .catalog-header {
-  background: #163C6B;
+  background: #323E48;
   padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -153,7 +153,7 @@
 
 .sketch-item-preview {
   height: 120px;
-  background: #163C6B;
+  background: #323E48;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,7 +176,7 @@
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #163C6B;
+  color: #323E48;
 }
 
 .sketch-item-info p {
@@ -205,7 +205,7 @@
 .load-sketch-button {
   flex: 1;
   padding: 1rem;
-  background-color: #163C6B;
+  background-color: #323E48;
   color: white;
   border: none;
   border-radius: 0;

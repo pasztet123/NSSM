@@ -1,0 +1,47 @@
+.pdf-export-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 40px;
+  background: #B8943C;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 12px rgba(184, 148, 60, 0.4);
+  width: 100%;
+  max-width: 500px;
+}
+
+.pdf-export-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(184, 148, 60, 0.5);
+  background: #a07f35;
+}
+
+.pdf-export-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 8px rgba(184, 148, 60, 0.4);
+}
+
+.pdf-export-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #9ca3af;
+  box-shadow: none;
+}
+
+.pdf-export-button svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.pdf-export-button span {
+  white-space: nowrap;
+  font-size: 18px;
+}

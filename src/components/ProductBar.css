@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   background: white;
-  border-top: 3px solid #163C6B;
+  border-top: 3px solid #323E48;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   z-index: 900;
   transition: all 0.3s ease;
@@ -17,7 +17,7 @@
 .product-bar-toggle {
   width: 100%;
   padding: 1rem 2rem;
-  background: #163C6B;
+  background: #323E48;
   color: white;
   border: none;
   cursor: pointer;
@@ -96,7 +96,7 @@
 }
 
 .product-tile.active {
-  border-color: #163C6B;
+  border-color: #323E48;
   background: #f0f4f8;
   box-shadow: 0 8px 20px rgba(22, 60, 107, 0.3);
 }

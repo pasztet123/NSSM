@@ -34,9 +34,13 @@ export const laborCosts: LaborCost[] = [
 export interface PricingConfig {
   profitMargin: number; // Percentage (e.g., 20 for 20%)
   laborCosts: LaborCost[];
+  setupFee: number; // One-time setup fee in dollars
+  quantity: number; // Number of units
 }
 
 export const defaultPricingConfig: PricingConfig = {
   profitMargin: 20,
   laborCosts,
+  setupFee: 10,
+  quantity: 1,
 };
