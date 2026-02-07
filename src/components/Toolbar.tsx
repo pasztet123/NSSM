@@ -69,29 +69,31 @@ const Toolbar = ({
         </button>
       </div>
 
-      <div className="toolbar-section">
-        <button
-          className={`toolbar-button ${editMode === 'free' ? 'active' : ''}`}
-          onClick={() => onEditModeChange('free')}
-          title="Free movement - no constraints"
-        >
-          Free
-        </button>
-        <button
-          className={`toolbar-button ${editMode === 'lockLength' ? 'active' : ''}`}
-          onClick={() => onEditModeChange('lockLength')}
-          title="Lock length - change angle only"
-        >
-          Lock Length
-        </button>
-        <button
-          className={`toolbar-button ${editMode === 'lockAngle' ? 'active' : ''}`}
-          onClick={() => onEditModeChange('lockAngle')}
-          title="Lock angle - change length only"
-        >
-          Lock Angle
-        </button>
-      </div>
+      {onEditModeChange && (
+        <div className="toolbar-section">
+          <button
+            className={`toolbar-button ${editMode === 'free' ? 'active' : ''}`}
+            onClick={() => onEditModeChange('free')}
+            title="Free movement - no constraints"
+          >
+            Free
+          </button>
+          <button
+            className={`toolbar-button ${editMode === 'lockLength' ? 'active' : ''}`}
+            onClick={() => onEditModeChange('lockLength')}
+            title="Lock length - change angle only"
+          >
+            Lock Length
+          </button>
+          <button
+            className={`toolbar-button ${editMode === 'lockAngle' ? 'active' : ''}`}
+            onClick={() => onEditModeChange('lockAngle')}
+            title="Lock angle - change length only"
+          >
+            Lock Angle
+          </button>
+        </div>
+      )}
       
       <div className="toolbar-section">
         <button
