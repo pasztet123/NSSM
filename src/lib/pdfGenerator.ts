@@ -124,7 +124,7 @@ export const generateProductionPDF = async (options: PDFGenerationOptions): Prom
       
       if (canvasElement) {
         const canvas = await html2canvas(canvasElement, {
-          backgroundColor: '#ffffff',
+          background: '#ffffff',
           scale: 2,
         });
 
