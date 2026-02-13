@@ -127,17 +127,32 @@ const DimensionCanvas = ({
     ctx.strokeStyle = '#808080';
     ctx.lineWidth = 1.5;
     
-    for (let x = 0; x <= canvas.width; x += gridSize) {
+    // Calculate visible area in world coordinates (accounting for zoom and pan)
+    const visibleLeft = -pan.x / zoom;
+    const visibleTop = -pan.y / zoom;
+    const visibleRight = (canvas.width - pan.x) / zoom;
+    const visibleBottom = (canvas.height - pan.y) / zoom;
+    
+    // Extend grid beyond visible area for smooth panning
+    const gridExtend = gridSize * 10;
+    const startX = Math.floor((visibleLeft - gridExtend) / gridSize) * gridSize;
+    const endX = Math.ceil((visibleRight + gridExtend) / gridSize) * gridSize;
+    const startY = Math.floor((visibleTop - gridExtend) / gridSize) * gridSize;
+    const endY = Math.ceil((visibleBottom + gridExtend) / gridSize) * gridSize;
+    
+    // Draw vertical grid lines
+    for (let x = startX; x <= endX; x += gridSize) {
       ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
+      ctx.moveTo(x, startY);
+      ctx.lineTo(x, endY);
       ctx.stroke();
     }
     
-    for (let y = 0; y <= canvas.height; y += gridSize) {
+    // Draw horizontal grid lines
+    for (let y = startY; y <= endY; y += gridSize) {
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
+      ctx.moveTo(startX, y);
+      ctx.lineTo(endX, y);
       ctx.stroke();
     }
 
@@ -551,7 +566,49 @@ const DimensionCanvas = ({
     }
 
     if (draggingPointId && mode === 'select') {
-      onUpdatePointPosition(draggingPointId, x - offset.x, y - offset.y);
+      let newX = x - offset.x;
+      let newY = y - offset.y;
+
+      // Apply constraints based on editMode
+      if (editMode !== 'free') {
+        const connectedSegments = segments.filter(
+          s => s.startPointId === draggingPointId || s.endPointId === draggingPointId
+        );
+
+        if (connectedSegments.length > 0) {
+          const segment = connectedSegments[0];
+          const isStart = segment.startPointId === draggingPointId;
+          const anchorPoint = points.find(p => 
+            p.id === (isStart ? segment.endPointId : segment.startPointId)
+          );
+
+          if (anchorPoint) {
+            if (editMode === 'lockLength') {
+              // Lock length - maintain distance, allow angle change
+              const dx = newX - anchorPoint.x;
+              const dy = newY - anchorPoint.y;
+              const currentDistance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (currentDistance > 0) {
+                const scale = segment.length / currentDistance;
+                newX = anchorPoint.x + dx * scale;
+                newY = anchorPoint.y + dy * scale;
+              }
+            } else if (editMode === 'lockAngle') {
+              // Lock angle - maintain direction, allow length change
+              const originalAngle = segment.angle! * (Math.PI / 180);
+              const dx = newX - anchorPoint.x;
+              const dy = newY - anchorPoint.y;
+              const newDistance = Math.sqrt(dx * dx + dy * dy);
+              
+              newX = anchorPoint.x + newDistance * Math.cos(originalAngle);
+              newY = anchorPoint.y + newDistance * Math.sin(originalAngle);
+            }
+          }
+        }
+      }
+
+      onUpdatePointPosition(draggingPointId, newX, newY);
     }
   };
 

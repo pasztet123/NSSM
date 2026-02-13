@@ -10,7 +10,7 @@ const ModelCatalog = lazy(() => import('./components/ModelCatalog'));
 const ModelUploader = lazy(() => import('./components/SimpleModelUploader'));
 const Sketch2DCatalog = lazy(() => import('./components/Sketch2DCatalog'));
 const SketchSaver = lazy(() => import('./components/SketchSaver'));
-import { Point, Segment, Unit, Model3D, Product, Material, convertToPixels } from './types';
+import { Point, Segment, Unit, Model3D, Product, Material, EditMode, convertToPixels } from './types';
 import { sampleModels } from './data/sampleModels';
 import { sample2DSketches } from './data/sample2DSketches';
 import { sampleProducts } from './data/sampleProducts';
@@ -30,6 +30,7 @@ function App() {
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
   const [mode, setMode] = useState<'select' | 'addPoint' | 'addSegment'>('select');
   const [unit, setUnit] = useState<Unit>('inch');
+  const [editMode, setEditMode] = useState<EditMode>('free');
   const [showModelCatalog, setShowModelCatalog] = useState(false);
   const [showSketchCatalog, setShowSketchCatalog] = useState(false);
   const [showSketchSaver, setShowSketchSaver] = useState(false);
@@ -222,6 +223,48 @@ function App() {
     setSegments(segments.map(s => 
       s.id === segmentId ? { ...s, angle: newAngle } : s
     ));
+  };
+
+  const updateBendAngle = (pointId: string, newBendAngle: number, segAId: string, segBId: string) => {
+    // Find the segments and points involved
+    const segA = segments.find(s => s.id === segAId);
+    const segB = segments.find(s => s.id === segBId);
+    const bendPoint = points.find(p => p.id === pointId);
+    
+    if (!segA || !segB || !bendPoint) return;
+
+    // Find which segment to keep fixed (segA) and which to rotate (segB)
+    // We'll keep segA fixed and rotate segB around the bend point
+    
+    // Find the other point of segB (the one that's not the bend point)
+    const isSegBStart = segB.startPointId === pointId;
+    const segBOtherPointId = isSegBStart ? segB.endPointId : segB.startPointId;
+    const segBOtherPoint = points.find(p => p.id === segBOtherPointId);
+    
+    if (!segBOtherPoint) return;
+
+    // Calculate the direction of segA from the bend point
+    const isSegAStart = segA.startPointId === pointId;
+    const segAOtherPointId = isSegAStart ? segA.endPointId : segA.startPointId;
+    const segAOtherPoint = points.find(p => p.id === segAOtherPointId);
+    
+    if (!segAOtherPoint) return;
+
+    // Vector from bend point to segA's other point
+    const vAx = segAOtherPoint.x - bendPoint.x;
+    const vAy = segAOtherPoint.y - bendPoint.y;
+    const angleA = Math.atan2(vAy, vAx);
+
+    // Calculate the new angle for segB based on the desired bend angle
+    // The bend angle is the interior angle, so we need to add PI to get the direction
+    const newAngleB = angleA + Math.PI - (newBendAngle * Math.PI / 180);
+
+    // Calculate new position for segB's other point
+    const newX = bendPoint.x + segB.length * Math.cos(newAngleB);
+    const newY = bendPoint.y + segB.length * Math.sin(newAngleB);
+
+    // Update the point position
+    updatePointPosition(segBOtherPointId, newX, newY);
   };
 
   const rotateShape = (angle: number) => {
@@ -782,7 +825,9 @@ function App() {
         <div className="dimension-workspace">
           <Toolbar 
             mode={mode}
+            editMode={editMode}
             onModeChange={setMode}
+            onEditModeChange={setEditMode}
             onClearAll={clearAll}
             unit={unit}
             onUnitChange={setUnit}
@@ -800,6 +845,7 @@ function App() {
             selectedPointId={selectedPointId}
             selectedSegmentId={selectedSegmentId}
             mode={mode}
+            editMode={editMode}
             unit={unit}
             onAddPoint={addPoint}
             onAddSegment={addSegment}
@@ -823,6 +869,7 @@ function App() {
             onUpdateSegmentLength={updateSegmentLength}
             onUpdateSegmentAngle={updateSegmentAngle}
             onDeleteSegment={deleteSegment}
+            onUpdateBendAngle={updateBendAngle}
           />
         </div>
       </div>

@@ -225,6 +225,24 @@
   font-size: 1.1rem;
 }
 
+.bend-angle-input {
+  width: 80px;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid #B8943C;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #B8943C !important;
+  text-align: right;
+  background: #ffffff;
+  transition: border-color 0.2s ease;
+}
+
+.bend-angle-input:focus {
+  outline: none;
+  border-color: #8b7030;
+}
+
 .bend-value-input {
   width: 80px;
   padding: 0.4rem 0.6rem;

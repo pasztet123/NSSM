@@ -141,7 +141,7 @@ export interface Model3D {
 export interface Material {
   id: string;
   name: string;
-  type: 'copper' | 'steel' | 'aluminum';
+  type: 'copper' | 'steel' | 'aluminum' | 'stainless';
   thickness: string; // e.g., "16 oz", "24 Ga", "0.032\""
   thicknessInches: number; // Actual thickness in inches for bend calculations
   kFactor: number; // K-factor for bend allowance calculations

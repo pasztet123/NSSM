@@ -15,6 +15,7 @@ interface DimensionPanelProps {
   onUpdateSegmentLength: (id: string, length: number) => void;
   onUpdateSegmentAngle: (id: string, angle: number) => void;
   onDeleteSegment: (id: string) => void;
+  onUpdateBendAngle?: (pointId: string, newAngle: number, segAId: string, segBId: string) => void;
 }
 
 const DimensionPanel = ({
@@ -30,6 +31,7 @@ const DimensionPanel = ({
   onUpdateSegmentLength,
   onUpdateSegmentAngle,
   onDeleteSegment,
+  onUpdateBendAngle,
 }: DimensionPanelProps) => {
   const unitLabel = getUnitLabel(unit);
 
@@ -318,7 +320,24 @@ const DimensionPanel = ({
                 return (
                   <div key={`bend-${bendInfo.pointId}-${index}`} className="bend-angle-item">
                     <span className="bend-label">{labelA} ↔ {labelB}:</span>
-                    <span className="bend-value">{bendInfo.angle.toFixed(1)}°</span>
+                    {onUpdateBendAngle ? (
+                      <input
+                        type="number"
+                        className="bend-angle-input"
+                        value={bendInfo.angle.toFixed(1)}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value > 0 && value < 180) {
+                            onUpdateBendAngle(bendInfo.pointId, value, bendInfo.segA.id, bendInfo.segB.id);
+                          }
+                        }}
+                        step="0.1"
+                        min="0.1"
+                        max="179.9"
+                      />
+                    ) : (
+                      <span className="bend-value">{bendInfo.angle.toFixed(1)}°</span>
+                    )}
                   </div>
                 );
               })

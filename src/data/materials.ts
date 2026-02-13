@@ -59,4 +59,18 @@ export const materials: Material[] = [
     weight: 0.45,
     color: '#C0C0C0',
   },
+  {
+    id: 'stainless-22ga-304',
+    name: '22 Ga Stainless Steel 304',
+    type: 'stainless',
+    thickness: '22 Ga',
+    thicknessInches: 0.0304,
+    kFactor: 0.44,
+    sheetPrice: 180,
+    sheetWidth: 48, // 4 feet
+    sheetLength: 120, // 10 feet
+    allowedWidths: [3, 4, 6, 9.6, 12, 16, 24, 48],
+    weight: 1.25,
+    color: '#E8E8E8',
+  },
 ];
