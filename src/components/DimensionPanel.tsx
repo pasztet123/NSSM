@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Segment, Unit, convertFromPixels, getUnitLabel, calculateBendAllowance } from '../types';
 import PDFExportButton from './PDFExportButton';
 import './DimensionPanel.css';
@@ -33,7 +34,44 @@ const DimensionPanel = ({
   onDeleteSegment,
   onUpdateBendAngle,
 }: DimensionPanelProps) => {
+  const [bendAngleDrafts, setBendAngleDrafts] = useState<Record<string, string>>({});
   const unitLabel = getUnitLabel(unit);
+
+  const commitBendAngleDraft = (
+    draftKey: string,
+    pointId: string,
+    segAId: string,
+    segBId: string,
+    fallbackAngle: number
+  ) => {
+    const draftValue = bendAngleDrafts[draftKey];
+
+    setBendAngleDrafts((currentDrafts) => {
+      const nextDrafts = { ...currentDrafts };
+      delete nextDrafts[draftKey];
+      return nextDrafts;
+    });
+
+    if (!onUpdateBendAngle || draftValue === undefined) {
+      return;
+    }
+
+    const trimmedValue = draftValue.trim();
+    if (trimmedValue === '') {
+      return;
+    }
+
+    const parsedValue = parseFloat(trimmedValue);
+    if (Number.isNaN(parsedValue) || parsedValue <= 0 || parsedValue >= 180) {
+      return;
+    }
+
+    if (Math.abs(parsedValue - fallbackAngle) < 0.0001) {
+      return;
+    }
+
+    onUpdateBendAngle(pointId, parsedValue, segAId, segBId);
+  };
 
   type PointLike = { id: string; x: number; y: number };
 
@@ -316,6 +354,8 @@ const DimensionPanel = ({
               bends.map((bendInfo, index) => {
                 const labelA = bendInfo.segA.label || `S${segments.findIndex(s => s.id === bendInfo.segA.id) + 1}`;
                 const labelB = bendInfo.segB.label || `S${segments.findIndex(s => s.id === bendInfo.segB.id) + 1}`;
+                const draftKey = `${bendInfo.pointId}:${bendInfo.segA.id}:${bendInfo.segB.id}`;
+                const bendAngleValue = bendAngleDrafts[draftKey] ?? bendInfo.angle.toFixed(1);
 
                 return (
                   <div key={`bend-${bendInfo.pointId}-${index}`} className="bend-angle-item">
@@ -324,11 +364,41 @@ const DimensionPanel = ({
                       <input
                         type="number"
                         className="bend-angle-input"
-                        value={bendInfo.angle.toFixed(1)}
+                        value={bendAngleValue}
                         onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          if (!isNaN(value) && value > 0 && value < 180) {
-                            onUpdateBendAngle(bendInfo.pointId, value, bendInfo.segA.id, bendInfo.segB.id);
+                          setBendAngleDrafts((currentDrafts) => ({
+                            ...currentDrafts,
+                            [draftKey]: e.target.value,
+                          }));
+                        }}
+                        onBlur={() => {
+                          commitBendAngleDraft(
+                            draftKey,
+                            bendInfo.pointId,
+                            bendInfo.segA.id,
+                            bendInfo.segB.id,
+                            bendInfo.angle
+                          );
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            commitBendAngleDraft(
+                              draftKey,
+                              bendInfo.pointId,
+                              bendInfo.segA.id,
+                              bendInfo.segB.id,
+                              bendInfo.angle
+                            );
+                            e.currentTarget.blur();
+                          }
+
+                          if (e.key === 'Escape') {
+                            setBendAngleDrafts((currentDrafts) => {
+                              const nextDrafts = { ...currentDrafts };
+                              delete nextDrafts[draftKey];
+                              return nextDrafts;
+                            });
+                            e.currentTarget.blur();
                           }
                         }}
                         step="0.1"

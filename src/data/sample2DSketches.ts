@@ -58,8 +58,8 @@ export const sample2DSketches = [
   },
   {
     id: 'sketch-6',
-    name: 'Coping Cap',
-    description: 'Coping cap profile - 150mm x 60mm',
+    name: 'Coping Cap Flashing',
+    description: 'Coping cap flashing profile - 150mm x 60mm',
     category: 'Caps',
     thumbnail: '∩',
     sketch2D: {

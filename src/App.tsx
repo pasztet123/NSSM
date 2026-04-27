@@ -23,6 +23,17 @@ import ProductCatalogDropdown from './components/ProductCatalogDropdown';
 import PriceDisplay from './components/PriceDisplay';
 import './App.css';
 
+function mergeProductsWithDefaults(storedProducts: Product[] | null): Product[] {
+  if (!storedProducts) {
+    return sampleProducts;
+  }
+
+  return sampleProducts.map((sampleProduct) => {
+    const storedProduct = storedProducts.find((product) => product.id === sampleProduct.id);
+    return storedProduct ? { ...sampleProduct, ...storedProduct } : sampleProduct;
+  });
+}
+
 function App() {
   const [points, setPoints] = useState<Point[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -37,6 +48,7 @@ function App() {
   const [selectedModel, setSelectedModel] = useState<Model3D | null>(null);
   const [show3DViewer, setShow3DViewer] = useState(false);
   const [showUploader, setShowUploader] = useState(false);
+  const [canvasViewResetKey, setCanvasViewResetKey] = useState(0);
   const [uploadedModels, setUploadedModels] = useState<Model3D[]>([]);
   const [savedSketches, setSavedSketches] = useState<Array<{
     id: string;
@@ -51,11 +63,10 @@ function App() {
   const [products, setProducts] = useState<Product[]>(() => {
     // Try to load products from localStorage on initial render
     const savedProducts = loadProductsFromLocalStorage();
-    return savedProducts || sampleProducts;
+    return mergeProductsWithDefaults(savedProducts);
   });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(() => {
-    const savedProducts = loadProductsFromLocalStorage();
-    const productsToUse = savedProducts || sampleProducts;
+    const productsToUse = mergeProductsWithDefaults(loadProductsFromLocalStorage());
     return productsToUse.find(p => p.id === 'prod-4') || null;
   });
   const [availableMaterials, setAvailableMaterials] = useState<Material[]>(materials);
@@ -100,6 +111,30 @@ function App() {
     } catch (error) {
       console.error('Error loading sketches:', error);
     }
+  };
+
+  const loadSketchIntoCanvas = (sketch2D?: { points: Point[]; segments: Segment[] }) => {
+    if (!sketch2D) {
+      setPoints([]);
+      setSegments([]);
+      setCanvasViewResetKey((currentKey) => currentKey + 1);
+      return;
+    }
+
+    setPoints(sketch2D.points);
+    setSegments(sketch2D.segments);
+    setCanvasViewResetKey((currentKey) => currentKey + 1);
+  };
+
+  const areSketchesEquivalent = (
+    left?: { points: Point[]; segments: Segment[] },
+    right?: { points: Point[]; segments: Segment[] }
+  ) => {
+    if (!left || !right) {
+      return false;
+    }
+
+    return JSON.stringify(left) === JSON.stringify(right);
   };
 
   const addPoint = (x: number, y: number) => {
@@ -255,9 +290,15 @@ function App() {
     const vAy = segAOtherPoint.y - bendPoint.y;
     const angleA = Math.atan2(vAy, vAx);
 
-    // Calculate the new angle for segB based on the desired bend angle
-    // The bend angle is the interior angle, so we need to add PI to get the direction
-    const newAngleB = angleA + Math.PI - (newBendAngle * Math.PI / 180);
+    const vBx = segBOtherPoint.x - bendPoint.x;
+    const vBy = segBOtherPoint.y - bendPoint.y;
+    const cross = (vAx * vBy) - (vAy * vBx);
+    const dot = (vAx * vBx) + (vAy * vBy);
+    const signedCurrentAngle = Math.atan2(cross, dot);
+    const bendSide = signedCurrentAngle >= 0 ? 1 : -1;
+
+    // Preserve the current bend side and set the requested interior angle directly.
+    const newAngleB = angleA + (bendSide * newBendAngle * Math.PI / 180);
 
     // Calculate new position for segB's other point
     const newX = bendPoint.x + segB.length * Math.cos(newAngleB);
@@ -417,8 +458,15 @@ function App() {
     setShowModelCatalog(false);
   };
 
-  const handleProductSelection = async (product: Product) => {
+  const handleProductSelection = async (
+    product: Product,
+    options?: { syncSketch?: boolean }
+  ) => {
     setSelectedProduct(product);
+
+    if (options?.syncSketch !== false) {
+      loadSketchIntoCanvas(product.sketch2D);
+    }
     
     // If product has a model3DId, load from database
     if (product.model3DId && user) {
@@ -554,7 +602,7 @@ function App() {
   };
 
   const handleAssignSketchToProduct = (sketchId: string, productId: string) => {
-    const sketch = sample2DSketches.find(s => s.id === sketchId);
+    const sketch = allSketches.find(s => s.id === sketchId);
     const productIndex = products.findIndex(p => p.id === productId);
     
     if (sketch && productIndex !== -1) {
@@ -562,6 +610,7 @@ function App() {
       const updatedProducts = [...products];
       updatedProducts[productIndex] = {
         ...updatedProducts[productIndex],
+        sketch2DId: sketch.id,
         sketch2D: sketch.sketch2D,
       };
       
@@ -572,17 +621,23 @@ function App() {
       // If this is the currently selected product, update the canvas
       if (selectedProduct?.id === productId) {
         setSelectedProduct(updatedProducts[productIndex]);
-        setPoints(sketch.sketch2D.points);
-        setSegments(sketch.sketch2D.segments);
+        loadSketchIntoCanvas(sketch.sketch2D);
       }
       
       alert(`2D Sketch "${sketch.name}" assigned to product "${updatedProducts[productIndex].name}"`);
     }
   };
 
-  const loadSketch = (sketch: { sketch2D: { points: Point[]; segments: Segment[] } }) => {
-    setPoints(sketch.sketch2D.points);
-    setSegments(sketch.sketch2D.segments);
+  const loadSketch = (sketch: { id: string; sketch2D: { points: Point[]; segments: Segment[] } }) => {
+    loadSketchIntoCanvas(sketch.sketch2D);
+
+    const assignedProduct = products.find((product) => product.sketch2DId === sketch.id)
+      ?? products.find((product) => areSketchesEquivalent(product.sketch2D, sketch.sketch2D));
+
+    if (assignedProduct) {
+      void handleProductSelection(assignedProduct, { syncSketch: false });
+    }
+
     setShowSketchCatalog(false);
   };
 
@@ -678,6 +733,7 @@ function App() {
 
   const allModels = [...sampleModels, ...uploadedModels];
   const allSketches = [...sample2DSketches, ...savedSketches];
+  const catalogSketches = allSketches.filter((sketch) => sketch.id !== 'sketch-6');
 
   const selectedMaterialFor2D = selectedProduct
     ? (availableMaterials.find(m => m.id === selectedProduct.selectedMaterial) ?? null)
@@ -840,6 +896,7 @@ function App() {
           />
           
           <DimensionCanvas
+            viewResetKey={canvasViewResetKey}
             points={points}
             segments={segments}
             selectedPointId={selectedPointId}
@@ -892,7 +949,7 @@ function App() {
       {showSketchCatalog && (
         <Suspense fallback={<div style={{position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', padding: '2rem', borderRadius: '8px'}}>Loading catalog...</div>}>
           <Sketch2DCatalog
-            sketches={allSketches}
+            sketches={catalogSketches}
             onSelectSketch={loadSketch}
             onClose={() => setShowSketchCatalog(false)}
             products={products}

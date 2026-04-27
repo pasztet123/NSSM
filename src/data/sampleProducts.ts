@@ -1,5 +1,6 @@
 import { Product } from '../types';
 import { sampleModels } from './sampleModels';
+import { sample2DSketches } from './sample2DSketches';
 
 export const sampleProducts: Product[] = [
   {
@@ -26,6 +27,8 @@ export const sampleProducts: Product[] = [
     model3D: undefined,
     model3DId: 'e9895a09-3635-4e77-8bf2-ef7b60f10765', // Database model ID
     model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
+    sketch2DId: sample2DSketches[2].id,
+    sketch2D: sample2DSketches[2].sketch2D,
     selectedMaterial: 'steel-24ga-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -55,6 +58,8 @@ export const sampleProducts: Product[] = [
     model3D: undefined,
     model3DId: '735ff491-a648-4fa1-a750-4eb4d39bb33e', // Database model ID
     model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
+    sketch2DId: sample2DSketches[0].id,
+    sketch2D: sample2DSketches[0].sketch2D,
     selectedMaterial: 'aluminum-032-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -141,6 +146,8 @@ export const sampleProducts: Product[] = [
     model3D: sampleModels[0], // Valley model (fallback)
     model3DId: '564e8cae-d431-419f-b435-19a76b384592', // Database model ID
     model3DRotation: [0, 0, Math.PI / 2], // Default rotation (90° around Z-axis)
+    sketch2DId: sample2DSketches[1].id,
+    sketch2D: sample2DSketches[1].sketch2D,
     selectedMaterial: 'steel-24ga-kynar', // Default material
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

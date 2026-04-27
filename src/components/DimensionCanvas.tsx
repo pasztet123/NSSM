@@ -3,6 +3,7 @@ import { Point, Segment, Unit, EditMode, Material, convertFromPixels, getUnitLab
 import './DimensionCanvas.css';
 
 interface DimensionCanvasProps {
+  viewResetKey?: number;
   points: Point[];
   segments: Segment[];
   selectedPointId: string | null;
@@ -21,7 +22,23 @@ interface DimensionCanvasProps {
   onMergePoints?: (sourcePointId: string, targetPointId: string) => void;
 }
 
+interface AngleLabelHitbox {
+  key: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface ConnectedBend {
+  point: Point;
+  angle: number;
+  segA: Segment;
+  segB: Segment;
+}
+
 const DimensionCanvas = ({
+  viewResetKey = 0,
   points,
   segments,
   selectedPointId,
@@ -40,17 +57,21 @@ const DimensionCanvas = ({
   onMergePoints,
 }: DimensionCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const angleLabelHitboxesRef = useRef<AngleLabelHitbox[]>([]);
   const [draggingPointId, setDraggingPointId] = useState<string | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [tempSegmentStart, setTempSegmentStart] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.8);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
   const [backgroundOpacity, setBackgroundOpacity] = useState(0.5);
   const [showBackgroundControls, setShowBackgroundControls] = useState(false);
+  const [showDimensions, setShowDimensions] = useState(false);
+  const [showAngles, setShowAngles] = useState(false);
+  const [alternateAngleLabels, setAlternateAngleLabels] = useState<Record<string, boolean>>({});
   
   // Future use for rotation and angle editing
   void onUpdateSegmentAngle;
@@ -60,11 +81,28 @@ const DimensionCanvas = ({
   const gridSize = getGridSize(unit);
   const unitLabel = getUnitLabel(unit);
 
-  // Calculate angle between two points (in degrees)
+  const getAngleLabelKey = (segment: Segment, nextSegment: Segment, commonPointId: string): string => {
+    const [firstSegmentId, secondSegmentId] = [segment.id, nextSegment.id].sort();
+    return `${firstSegmentId}:${secondSegmentId}:${commonPointId}`;
+  };
+
+  const getDisplayedAngle = (angle: number, angleKey: string): number => {
+    if (!alternateAngleLabels[angleKey]) {
+      return angle;
+    }
+
+    const alternateAngle = 360 - angle;
+    return alternateAngle >= 360 ? 0 : alternateAngle;
+  };
+
   const calculateAngle = (x1: number, y1: number, x2: number, y2: number): number => {
     const radians = Math.atan2(y2 - y1, x2 - x1);
-    const degrees = radians * (180 / Math.PI);
-    return degrees;
+    return radians * (180 / Math.PI);
+  };
+
+  const getOtherPointForSegmentAtPoint = (segment: Segment, pointId: string): Point | null => {
+    const otherPointId = segment.startPointId === pointId ? segment.endPointId : segment.startPointId;
+    return points.find((point) => point.id === otherPointId) ?? null;
   };
 
   // Get angle between two segments
@@ -101,12 +139,139 @@ const DimensionCanvas = ({
     return diff;
   };
 
+  const connectedBends: ConnectedBend[] = (() => {
+    if (points.length === 0 || segments.length < 2) {
+      return [];
+    }
+
+    const pointsById = new Map(points.map((point) => [point.id, point]));
+    const segmentsByPoint = new Map<string, Segment[]>();
+
+    const addSegmentToPoint = (pointId: string, segment: Segment) => {
+      const existingSegments = segmentsByPoint.get(pointId);
+      if (existingSegments) {
+        existingSegments.push(segment);
+      } else {
+        segmentsByPoint.set(pointId, [segment]);
+      }
+    };
+
+    for (const segment of segments) {
+      addSegmentToPoint(segment.startPointId, segment);
+      addSegmentToPoint(segment.endPointId, segment);
+    }
+
+    const angleBetweenVectors = (firstVector: { x: number; y: number }, secondVector: { x: number; y: number }) => {
+      const firstMagnitude = Math.hypot(firstVector.x, firstVector.y);
+      const secondMagnitude = Math.hypot(secondVector.x, secondVector.y);
+
+      if (firstMagnitude === 0 || secondMagnitude === 0) {
+        return null;
+      }
+
+      const dot = firstVector.x * secondVector.x + firstVector.y * secondVector.y;
+      const cosine = Math.max(-1, Math.min(1, dot / (firstMagnitude * secondMagnitude)));
+      return (Math.acos(cosine) * 180) / Math.PI;
+    };
+
+    const bends: ConnectedBend[] = [];
+
+    for (const [pointId, connectedSegments] of segmentsByPoint.entries()) {
+      if (connectedSegments.length !== 2) {
+        continue;
+      }
+
+      const bendPoint = pointsById.get(pointId);
+      const firstPoint = getOtherPointForSegmentAtPoint(connectedSegments[0], pointId);
+      const secondPoint = getOtherPointForSegmentAtPoint(connectedSegments[1], pointId);
+
+      if (!bendPoint || !firstPoint || !secondPoint) {
+        continue;
+      }
+
+      const angle = angleBetweenVectors(
+        { x: firstPoint.x - bendPoint.x, y: firstPoint.y - bendPoint.y },
+        { x: secondPoint.x - bendPoint.x, y: secondPoint.y - bendPoint.y }
+      );
+
+      if (angle === null || angle <= 0.001 || angle >= 179.999) {
+        continue;
+      }
+
+      bends.push({
+        point: bendPoint,
+        angle,
+        segA: connectedSegments[0],
+        segB: connectedSegments[1],
+      });
+    }
+
+    return bends;
+  })();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    setAlternateAngleLabels({});
+    setShowDimensions(false);
+    setShowAngles(false);
+
+    if (points.length === 0) {
+      setZoom(0.8);
+      setPan({ x: 0, y: 0 });
+      return;
+    }
+
+    const xValues = points.map((point) => point.x);
+    const yValues = points.map((point) => point.y);
+    const minX = Math.min(...xValues);
+    const maxX = Math.max(...xValues);
+    const minY = Math.min(...yValues);
+    const maxY = Math.max(...yValues);
+
+    const shapeWidth = Math.max(maxX - minX, 1);
+    const shapeHeight = Math.max(maxY - minY, 1);
+
+    // Keep loaded profiles away from the top-left toolbar and give them more breathing room.
+    const viewportPadding = {
+      left: 140,
+      right: 120,
+      top: 90,
+      bottom: 110,
+    };
+    const availableWidth = Math.max(canvas.width - viewportPadding.left - viewportPadding.right, 1);
+    const availableHeight = Math.max(canvas.height - viewportPadding.top - viewportPadding.bottom, 1);
+    const fittedZoom = Math.min(
+      availableWidth / shapeWidth,
+      availableHeight / shapeHeight,
+      1.35
+    );
+
+    const normalizedZoom = Number.isFinite(fittedZoom)
+      ? Math.max(0.2, fittedZoom * 0.9)
+      : 0.8;
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const targetCenterX = viewportPadding.left + availableWidth / 2;
+    const targetCenterY = viewportPadding.top + availableHeight / 2;
+
+    setZoom(normalizedZoom);
+    setPan({
+      x: targetCenterX - centerX * normalizedZoom,
+      y: targetCenterY - centerY * normalizedZoom,
+    });
+  }, [viewResetKey]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    angleLabelHitboxesRef.current = [];
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -140,23 +305,25 @@ const DimensionCanvas = ({
     const startY = Math.floor((visibleTop - gridExtend) / gridSize) * gridSize;
     const endY = Math.ceil((visibleBottom + gridExtend) / gridSize) * gridSize;
     
+    // Draw all grid lines in one path for better performance
+    ctx.beginPath();
     // Draw vertical grid lines
     for (let x = startX; x <= endX; x += gridSize) {
-      ctx.beginPath();
       ctx.moveTo(x, startY);
       ctx.lineTo(x, endY);
-      ctx.stroke();
     }
     
     // Draw horizontal grid lines
     for (let y = startY; y <= endY; y += gridSize) {
-      ctx.beginPath();
       ctx.moveTo(startX, y);
       ctx.lineTo(endX, y);
-      ctx.stroke();
     }
+    ctx.stroke();
 
     // Draw segments
+    // First pass - collect label positions to detect collisions
+    const labelPositions: Array<{ x: number; y: number; width: number; height: number; segmentIndex: number }> = [];
+    
     segments.forEach((segment, index) => {
       const startPoint = points.find(p => p.id === segment.startPointId);
       const endPoint = points.find(p => p.id === segment.endPointId);
@@ -169,128 +336,316 @@ const DimensionCanvas = ({
         ctx.lineWidth = segment.id === selectedSegmentId ? 4 : 3;
         ctx.stroke();
 
-        // Draw segment label (A, B, C, ...)
-        const midX = (startPoint.x + endPoint.x) / 2;
-        const midY = (startPoint.y + endPoint.y) / 2;
-        
-        const label = segment.label || String.fromCharCode(65 + index); // A, B, C, ...
-        const lengthInUnits = convertFromPixels(segment.length, unit);
-        
-        // Calculate bend allowance dimensions if material is available and there's a bend
-        let bendInfo: { inner: number; neutral: number; outer: number } | null = null;
-        if (material && index < segments.length - 1) {
-          const nextSegment = segments[index + 1];
-          const bendAngle = getAngleBetweenSegments(segment, nextSegment);
+        // Calculate label position and size for collision detection
+        if (showDimensions) {
+          const midX = (startPoint.x + endPoint.x) / 2;
+          const midY = (startPoint.y + endPoint.y) / 2;
           
-          if (bendAngle !== null && bendAngle > 0 && bendAngle < 180) {
-            // Convert from pixels to inches
-            const lengthInches = unit === 'inch' 
-              ? lengthInUnits 
-              : lengthInUnits / 25.4;
+          const lengthInUnits = convertFromPixels(segment.length, unit);
+          
+          // Calculate bend allowance dimensions if material is available and there's a bend
+          let bendInfo: { inner: number; neutral: number; outer: number } | null = null;
+          if (material && index < segments.length - 1) {
+            const nextSegment = segments[index + 1];
+            const bendAngle = getAngleBetweenSegments(segment, nextSegment);
             
-            // Calculate bend allowance for the bend at the end of this segment
-            const actualBendAngle = Math.abs(180 - bendAngle);
-            const bend = calculateBendAllowance(
-              actualBendAngle,
-              material.thicknessInches,
-              material.kFactor
-            );
-            
-            // Convert back to current unit
-            const unitMultiplier = unit === 'inch' ? 1 : 25.4;
-            bendInfo = {
-              inner: lengthInches * unitMultiplier,
-              neutral: (lengthInches + bend.neutralAxisLength) * unitMultiplier,
-              outer: (lengthInches + bend.outerLength - bend.innerLength) * unitMultiplier,
-            };
+            if (bendAngle !== null && bendAngle > 0 && bendAngle < 180) {
+              const lengthInches = unit === 'inch' ? lengthInUnits : lengthInUnits / 25.4;
+              const actualBendAngle = Math.abs(180 - bendAngle);
+              const bend = calculateBendAllowance(
+                actualBendAngle,
+                material.thicknessInches,
+                material.kFactor
+              );
+              const unitMultiplier = unit === 'inch' ? 1 : 25.4;
+              bendInfo = {
+                inner: lengthInches * unitMultiplier,
+                neutral: (lengthInches + bend.neutralAxisLength) * unitMultiplier,
+                outer: (lengthInches + bend.outerLength - bend.innerLength) * unitMultiplier,
+              };
+            }
           }
-        }
-        
-        // Adjust background size if showing bend info
-        const backgroundHeight = bendInfo ? 70 : 45;
-        const backgroundWidth = bendInfo ? 100 : 85;
-        
-        // Draw label background - szare tło
-        ctx.fillStyle = 'rgba(150, 150, 150, 0.85)';
-        ctx.fillRect(midX - backgroundWidth/2, midY - 30, backgroundWidth, backgroundHeight);
-        
-        // Draw label text
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 22px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(label, midX, midY - 8);
-        
-        // Draw dimensions
-        if (bendInfo) {
-          // Show three dimensions
-          ctx.font = '14px Arial';
-          ctx.fillStyle = '#ffcccc'; // Light red for compression (inner)
-          ctx.fillText(`↓ ${bendInfo.inner.toFixed(2)}`, midX, midY + 6);
           
-          ctx.fillStyle = '#ffffff'; // White for neutral axis
-          ctx.fillText(`⊙ ${bendInfo.neutral.toFixed(2)}`, midX, midY + 20);
+          const backgroundHeight = bendInfo ? 70 : 45;
+          const backgroundWidth = bendInfo ? 100 : 85;
           
-          ctx.fillStyle = '#ccddff'; // Light blue for tension (outer)
-          ctx.fillText(`↑ ${bendInfo.outer.toFixed(2)}`, midX, midY + 34);
+          // Try multiple positions around the segment midpoint
+          const testDistances = [80, 120, 160, 200, 240, 280];
+          const testAngles = [
+            -Math.PI / 2,  // Above
+            Math.PI / 2,   // Below
+            0,             // Right
+            Math.PI,       // Left
+            -Math.PI / 4,  // Top-right
+            Math.PI / 4,   // Bottom-right
+            3 * Math.PI / 4,   // Bottom-left
+            -3 * Math.PI / 4,  // Top-left
+          ];
           
-          ctx.fillStyle = '#dddddd';
-          ctx.font = '13px Arial';
-          ctx.fillText(unitLabel, midX, midY + 48);
-        } else {
-          // Show single dimension
-          ctx.font = '18px Arial';
+          let bestX = midX;
+          let bestY = midY;
+          let bestScore = -1;
+          let found = false;
+          
+          for (const distance of testDistances) {
+            if (found) break;
+            
+            for (const angle of testAngles) {
+              const testOffsetX = Math.cos(angle) * distance;
+              const testOffsetY = Math.sin(angle) * distance;
+              const testX = midX + testOffsetX - backgroundWidth / 2;
+              const testY = midY + testOffsetY - 30;
+              
+              // Check collision with existing labels
+              let hasCollision = false;
+              let minDistance = Infinity;
+              
+              for (const existing of labelPositions) {
+                const margin = 30;
+                
+                // Check if rectangles overlap
+                if (!(testX + backgroundWidth + margin < existing.x ||
+                      testX > existing.x + existing.width + margin ||
+                      testY + backgroundHeight + margin < existing.y ||
+                      testY > existing.y + existing.height + margin)) {
+                  hasCollision = true;
+                  break;
+                }
+                
+                // Calculate distance to existing label (for scoring)
+                const centerX = testX + backgroundWidth / 2;
+                const centerY = testY + backgroundHeight / 2;
+                const existingCenterX = existing.x + existing.width / 2;
+                const existingCenterY = existing.y + existing.height / 2;
+                const dist = Math.sqrt(
+                  Math.pow(centerX - existingCenterX, 2) + 
+                  Math.pow(centerY - existingCenterY, 2)
+                );
+                minDistance = Math.min(minDistance, dist);
+              }
+              
+              if (!hasCollision) {
+                // Score based on distance from segment and distance from other labels
+                const score = minDistance - distance * 0.5;
+                
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestX = midX + testOffsetX;
+                  bestY = midY + testOffsetY;
+                  
+                  // If distance is minimal, accept it immediately
+                  if (distance <= 80) {
+                    found = true;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          
+          // Store label position
+          labelPositions.push({
+            x: bestX - backgroundWidth/2,
+            y: bestY - 30,
+            width: backgroundWidth,
+            height: backgroundHeight,
+            segmentIndex: index
+          });
+          
+          const label = segment.label || String.fromCharCode(65 + index);
+          
+          // Draw leader line if label was moved significantly
+          const offsetX = bestX - midX;
+          const offsetY = bestY - midY;
+          const distMoved = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+          if (distMoved > 15) {
+            ctx.beginPath();
+            ctx.moveTo(midX, midY);
+            ctx.lineTo(bestX, bestY);
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          
+          // Draw label background
+          ctx.fillStyle = 'rgba(150, 150, 150, 0.92)';
+          ctx.fillRect(bestX - backgroundWidth/2, bestY - 30, backgroundWidth, backgroundHeight);
+          
+          // Add subtle border for better visibility
+          ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(bestX - backgroundWidth/2, bestY - 30, backgroundWidth, backgroundHeight);
+          
+          // Draw label text
           ctx.fillStyle = '#ffffff';
-          ctx.fillText(`${lengthInUnits.toFixed(1)} ${unitLabel}`, midX, midY + 10);
+          ctx.font = 'bold 22px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, bestX, bestY - 8);
+          
+          // Draw dimensions
+          if (bendInfo) {
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#ffcccc';
+            ctx.fillText(`↓ ${bendInfo.inner.toFixed(2)}`, bestX, bestY + 6);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(`⊙ ${bendInfo.neutral.toFixed(2)}`, bestX, bestY + 20);
+            ctx.fillStyle = '#ccddff';
+            ctx.fillText(`↑ ${bendInfo.outer.toFixed(2)}`, bestX, bestY + 34);
+            ctx.fillStyle = '#dddddd';
+            ctx.font = '13px Arial';
+            ctx.fillText(unitLabel, bestX, bestY + 48);
+          } else {
+            ctx.font = '18px Arial';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(`${lengthInUnits.toFixed(1)} ${unitLabel}`, bestX, bestY + 10);
+          }
         }
       }
     });
 
     // Draw angles between connected segments
-    segments.forEach((segment, idx) => {
-      if (idx < segments.length - 1) {
-        const nextSegment = segments[idx + 1];
-        const angle = getAngleBetweenSegments(segment, nextSegment);
-        
-        if (angle !== null) {
-          // Find common point
-          let commonPoint: Point | undefined;
-          if (segment.endPointId === nextSegment.startPointId) {
-            commonPoint = points.find(p => p.id === segment.endPointId);
-          }
-          
-          if (commonPoint) {
-            // Draw angle arc
-            ctx.beginPath();
-            ctx.arc(commonPoint.x, commonPoint.y, 25, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#9b59b6';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([3, 3]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            
-            // Draw angle text background
-            const angleText = `${angle.toFixed(1)}°`;
-            ctx.font = 'bold 18px Arial';
-            const textMetrics = ctx.measureText(angleText);
-            const textWidth = textMetrics.width;
-            const bgPadding = 8;
-            
-            ctx.fillStyle = 'rgba(150, 150, 150, 0.85)';
-            ctx.fillRect(
-              commonPoint.x - textWidth/2 - bgPadding,
-              commonPoint.y - 45,
-              textWidth + bgPadding * 2,
-              28
-            );
-            
-            // Draw angle text
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.fillText(angleText, commonPoint.x, commonPoint.y - 25);
+    if (showAngles) {
+      connectedBends.forEach((bendInfo) => {
+        const commonPoint = bendInfo.point;
+        const firstPoint = getOtherPointForSegmentAtPoint(bendInfo.segA, commonPoint.id);
+        const secondPoint = getOtherPointForSegmentAtPoint(bendInfo.segB, commonPoint.id);
+
+        if (!firstPoint || !secondPoint) {
+          return;
+        }
+
+        const angleKey = getAngleLabelKey(bendInfo.segA, bendInfo.segB, commonPoint.id);
+        const displayedAngle = getDisplayedAngle(bendInfo.angle, angleKey);
+
+        const firstSegmentAngle = Math.atan2(firstPoint.y - commonPoint.y, firstPoint.x - commonPoint.x);
+        const secondSegmentAngle = Math.atan2(secondPoint.y - commonPoint.y, secondPoint.x - commonPoint.x);
+        let sweep = secondSegmentAngle - firstSegmentAngle;
+        while (sweep <= -Math.PI) sweep += 2 * Math.PI;
+        while (sweep > Math.PI) sweep -= 2 * Math.PI;
+
+        const arcRadius = 25;
+        ctx.beginPath();
+        ctx.arc(commonPoint.x, commonPoint.y, arcRadius, firstSegmentAngle, firstSegmentAngle + sweep, sweep < 0);
+        ctx.strokeStyle = '#9b59b6';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const angleText = `${displayedAngle.toFixed(1)}°`;
+        ctx.font = 'bold 18px Arial';
+        const textMetrics = ctx.measureText(angleText);
+        const textWidth = textMetrics.width;
+        const bgPadding = 8;
+        const angleWidth = textWidth + bgPadding * 2;
+        const angleHeight = 28;
+
+        const midAngle = firstSegmentAngle + sweep / 2;
+        const labelDistance = 78;
+        let bestAngleX = commonPoint.x + Math.cos(midAngle) * labelDistance;
+        let bestAngleY = commonPoint.y + Math.sin(midAngle) * labelDistance;
+
+        const testDistances = [78, 110, 145];
+        const testOffsets = [0, Math.PI / 10, -Math.PI / 10, Math.PI / 6, -Math.PI / 6];
+        let bestAngleScore = -1;
+
+        for (const distance of testDistances) {
+          for (const testOffset of testOffsets) {
+            const candidateAngle = midAngle + testOffset;
+            const candidateX = commonPoint.x + Math.cos(candidateAngle) * distance;
+            const candidateY = commonPoint.y + Math.sin(candidateAngle) * distance;
+            const testX = candidateX - angleWidth / 2;
+            const testY = candidateY - angleHeight / 2;
+
+            let hasCollision = false;
+            let minDistance = Infinity;
+
+            for (const existing of labelPositions) {
+              const margin = 18;
+              if (!(testX + angleWidth + margin < existing.x ||
+                    testX > existing.x + existing.width + margin ||
+                    testY + angleHeight + margin < existing.y ||
+                    testY > existing.y + existing.height + margin)) {
+                hasCollision = true;
+                break;
+              }
+
+              const centerX = testX + angleWidth / 2;
+              const centerY = testY + angleHeight / 2;
+              const existingCenterX = existing.x + existing.width / 2;
+              const existingCenterY = existing.y + existing.height / 2;
+              const distanceToExisting = Math.sqrt(
+                Math.pow(centerX - existingCenterX, 2) +
+                Math.pow(centerY - existingCenterY, 2)
+              );
+              minDistance = Math.min(minDistance, distanceToExisting);
+            }
+
+            if (!hasCollision) {
+              const score = minDistance - Math.abs(testOffset) * 60 - distance * 0.2;
+              if (score > bestAngleScore) {
+                bestAngleScore = score;
+                bestAngleX = candidateX;
+                bestAngleY = candidateY;
+              }
+            }
           }
         }
-      }
-    });
+
+        const angleOffsetX = bestAngleX - commonPoint.x;
+        const angleOffsetY = bestAngleY - commonPoint.y;
+        const angleDistMoved = Math.sqrt(angleOffsetX * angleOffsetX + angleOffsetY * angleOffsetY);
+        if (angleDistMoved > 40) {
+          ctx.beginPath();
+          ctx.moveTo(commonPoint.x + Math.cos(midAngle) * arcRadius, commonPoint.y + Math.sin(midAngle) * arcRadius);
+          ctx.lineTo(bestAngleX, bestAngleY);
+          ctx.strokeStyle = 'rgba(155, 89, 182, 0.45)';
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([5, 3]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        ctx.fillStyle = 'rgba(150, 150, 150, 0.92)';
+        ctx.fillRect(
+          bestAngleX - angleWidth / 2,
+          bestAngleY - angleHeight / 2,
+          angleWidth,
+          angleHeight
+        );
+
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(
+          bestAngleX - angleWidth / 2,
+          bestAngleY - angleHeight / 2,
+          angleWidth,
+          angleHeight
+        );
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText(angleText, bestAngleX, bestAngleY + 6);
+
+        labelPositions.push({
+          x: bestAngleX - angleWidth / 2,
+          y: bestAngleY - angleHeight / 2,
+          width: angleWidth,
+          height: angleHeight,
+          segmentIndex: -1,
+        });
+
+        angleLabelHitboxesRef.current.push({
+          key: angleKey,
+          x: bestAngleX - angleWidth / 2,
+          y: bestAngleY - angleHeight / 2,
+          width: angleWidth,
+          height: angleHeight,
+        });
+      });
+    }
 
     // Draw temporary segment line (when adding segment)
     if (mode === 'addSegment' && tempSegmentStart) {
@@ -421,7 +776,7 @@ const DimensionCanvas = ({
 
     // Restore context
     ctx.restore();
-  }, [points, segments, selectedPointId, selectedSegmentId, unit, material, mode, tempSegmentStart, mousePos, zoom, pan, draggingPointId, editMode]);
+  }, [points, segments, selectedPointId, selectedSegmentId, unit, material, mode, tempSegmentStart, mousePos, zoom, pan, draggingPointId, editMode, backgroundImage, backgroundOpacity, showDimensions, showAngles, alternateAngleLabels]);
 
   const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -469,6 +824,19 @@ const DimensionCanvas = ({
     return null;
   };
 
+  const findAngleLabelAtPosition = (x: number, y: number): string | null => {
+    for (const hitbox of angleLabelHitboxesRef.current) {
+      const withinX = x >= hitbox.x && x <= hitbox.x + hitbox.width;
+      const withinY = y >= hitbox.y && y <= hitbox.y + hitbox.height;
+
+      if (withinX && withinY) {
+        return hitbox.key;
+      }
+    }
+
+    return null;
+  };
+
   const distanceToSegment = (
     px: number, py: number,
     x1: number, y1: number,
@@ -513,6 +881,12 @@ const DimensionCanvas = ({
     }
 
     const { x, y } = getCanvasCoordinates(e);
+    const angleLabelKey = findAngleLabelAtPosition(x, y);
+
+    if (angleLabelKey) {
+      return;
+    }
+
     const pointId = findPointAtPosition(x, y);
 
     if (mode === 'addSegment') {
@@ -663,8 +1037,18 @@ const DimensionCanvas = ({
   };
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const { x, y } = getCanvasCoordinates(e);
+    const angleLabelKey = findAngleLabelAtPosition(x, y);
+
+    if (angleLabelKey) {
+      setAlternateAngleLabels((current) => ({
+        ...current,
+        [angleLabelKey]: !current[angleLabelKey],
+      }));
+      return;
+    }
+
     if (mode === 'addPoint' && !draggingPointId) {
-      const { x, y } = getCanvasCoordinates(e);
       onAddPoint(x, y);
     }
   };
@@ -727,6 +1111,29 @@ const DimensionCanvas = ({
     <div className="dimension-canvas-container">
       <div className="canvas-wrapper-inner">
         <div className="canvas-toolbar">
+          <button 
+            className={`toggle-dimensions-btn ${showDimensions ? 'active' : ''}`}
+            onClick={() => setShowDimensions(!showDimensions)}
+            title={showDimensions ? "Hide lengths" : "Show lengths"}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="4" y1="12" x2="20" y2="12" strokeWidth="2"/>
+              <line x1="4" y1="8" x2="4" y2="16" strokeWidth="2"/>
+              <line x1="20" y1="8" x2="20" y2="16" strokeWidth="2"/>
+            </svg>
+            Lengths
+          </button>
+          <button 
+            className={`toggle-dimensions-btn ${showAngles ? 'active' : ''}`}
+            onClick={() => setShowAngles(!showAngles)}
+            title={showAngles ? "Hide angles" : "Show angles"}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M20 9v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9" strokeWidth="2"/>
+              <path d="M9 22V12h6v10M2 10.6L12 2l10 8.6" strokeWidth="2"/>
+            </svg>
+            Angles
+          </button>
           <label className="upload-background-btn">
             <input
               type="file"
@@ -778,8 +1185,8 @@ const DimensionCanvas = ({
         )}
         <canvas
           ref={canvasRef}
-          width={1200}
-          height={800}
+          width={900}
+          height={600}
           className="dimension-canvas"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}

@@ -117,27 +117,109 @@ export const generateProductionPDF = async (options: PDFGenerationOptions): Prom
 
   yPos += 10;
 
-  // Add sketch - find canvas in DOM
+  // Add sketch - find canvas in DOM and capture three versions
   if (yPos < pageHeight - 80) {
     try {
       const canvasElement = document.querySelector('canvas.dimension-canvas') as HTMLCanvasElement;
       
       if (canvasElement) {
-        const canvas = await html2canvas(canvasElement, {
+        // Find the toggle buttons
+        const toggleButtons = Array.from(document.querySelectorAll('.toggle-dimensions-btn')) as HTMLButtonElement[];
+        const lengthsButton = toggleButtons[0]; // Lengths button
+        const anglesButton = toggleButtons[1]; // Angles button
+        
+        // Save original state
+        const wasLengthsActive = lengthsButton?.classList.contains('active');
+        const wasAnglesActive = anglesButton?.classList.contains('active');
+        
+        // First capture - WITH everything (lengths + angles)
+        if (lengthsButton && !wasLengthsActive) {
+          lengthsButton.click();
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        if (anglesButton && !wasAnglesActive) {
+          anglesButton.click();
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const canvasWithAll = await html2canvas(canvasElement, {
           background: '#ffffff',
         });
-
-        const imgData = canvas.toDataURL('image/png');
+        const imgDataWithAll = canvasWithAll.toDataURL('image/png');
+        
+        // Second capture - ONLY lengths (no angles)
+        if (anglesButton && anglesButton.classList.contains('active')) {
+          anglesButton.click();
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const canvasLengthsOnly = await html2canvas(canvasElement, {
+          background: '#ffffff',
+        });
+        const imgDataLengthsOnly = canvasLengthsOnly.toDataURL('image/png');
+        
+        // Third capture - WITHOUT anything (clean)
+        if (lengthsButton && lengthsButton.classList.contains('active')) {
+          lengthsButton.click();
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const canvasClean = await html2canvas(canvasElement, {
+          background: '#ffffff',
+        });
+        const imgDataClean = canvasClean.toDataURL('image/png');
+        
+        // Restore original state
+        if (lengthsButton && wasLengthsActive !== lengthsButton.classList.contains('active')) {
+          lengthsButton.click();
+        }
+        if (anglesButton && wasAnglesActive !== anglesButton.classList.contains('active')) {
+          anglesButton.click();
+        }
+        
         const imgWidth = contentWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const imgHeight = (canvasWithAll.height * imgWidth) / canvasWithAll.width;
+        const maxImgHeight = 100;
 
-        if (yPos + imgHeight > pageHeight - margin) {
+        // Add sketch WITH all dimensions and angles
+        if (yPos + maxImgHeight > pageHeight - margin) {
           doc.addPage();
           yPos = margin;
         }
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Sketch with Dimensions and Angles:', margin, yPos);
+        yPos += 6;
 
-        doc.addImage(imgData, 'PNG', margin, yPos, imgWidth, Math.min(imgHeight, 100));
-        yPos += Math.min(imgHeight, 100) + 10;
+        doc.addImage(imgDataWithAll, 'PNG', margin, yPos, imgWidth, Math.min(imgHeight, maxImgHeight));
+        yPos += Math.min(imgHeight, maxImgHeight) + 15;
+        
+        // Add sketch WITH lengths only (no angles)
+        if (yPos + maxImgHeight > pageHeight - margin) {
+          doc.addPage();
+          yPos = margin;
+        }
+        
+        doc.setFontSize(12);
+        doc.text('Sketch with Lengths Only (No Angles):', margin, yPos);
+        yPos += 6;
+
+        doc.addImage(imgDataLengthsOnly, 'PNG', margin, yPos, imgWidth, Math.min(imgHeight, maxImgHeight));
+        yPos += Math.min(imgHeight, maxImgHeight) + 15;
+        
+        // Add sketch WITHOUT anything (clean version)
+        if (yPos + maxImgHeight > pageHeight - margin) {
+          doc.addPage();
+          yPos = margin;
+        }
+        
+        doc.setFontSize(12);
+        doc.text('Clean Sketch (No Dimensions or Angles):', margin, yPos);
+        yPos += 6;
+
+        doc.addImage(imgDataClean, 'PNG', margin, yPos, imgWidth, Math.min(imgHeight, maxImgHeight));
+        yPos += Math.min(imgHeight, maxImgHeight) + 10;
       } else {
         doc.setFontSize(10);
         doc.text('(Canvas element not found)', margin, yPos);

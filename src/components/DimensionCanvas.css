@@ -33,6 +33,36 @@
   top: 10px;
   left: 10px;
   z-index: 10;
+  display: flex;
+  gap: 10px;
+}
+
+.toggle-dimensions-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #323E48;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-dimensions-btn:hover {
+  background-color: #1a4a7f;
+}
+
+.toggle-dimensions-btn.active {
+  background-color: #2980b9;
+}
+
+.toggle-dimensions-btn.active:hover {
+  background-color: #1a4a7f;
 }
 
 .upload-background-btn {
